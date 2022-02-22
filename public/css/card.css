@@ -1,0 +1,247 @@
+.accessory-primary,
+.accessory-secondary {
+	line-height: 1em;
+	width: calc(var(--card-height) * 2);
+	height: calc(1em + var(--card-region-spacing) * 2);
+	padding: var(--card-region-spacing);
+	display: inline-block;
+	margin: calc(-0.5em - var(--card-region-spacing)) calc(-1 * var(--card-height));
+	position: relative;
+	transition: transform var(--animation-duration) ease-in-out;
+	transform: translateX(var(--position-offset-x)) translateY(var(--position-offset-y));
+	--position-offset-x: 0px;
+	--position-offset-y: 0px;
+	--edge-top: calc(var(--card-region-spacing) + 0.5em - 50vh);
+	--edge-right: calc(var(--card-height) * -1 + 50vw);
+	--edge-bottom: calc(var(--card-region-spacing) * -1 - 0.5em + 50vh);
+	--edge-left: calc(var(--card-height) - 50vw);
+	--stack-offset: calc(var(--card-spread-distance) * ((var(--stack-size) - 1) / 2) + var(--card-width) / 2);
+	color: white;
+	vertical-align: top;
+}
+
+.accessory-primary {
+	font-weight: bold;
+}
+
+.card {
+	vertical-align: top;
+	display: inline-block;
+	position: relative;
+	width: var(--card-width);
+	height: var(--card-height);
+	border-radius: calc(var(--card-width) / 10);
+	margin: calc(var(--card-height) / -2) calc(var(--card-width) / -2);
+	--position-offset-x: 0px;
+	--position-offset-y: 0px;
+	--hover-offset: 0px;
+	--turn-offset: 0px;
+	--rotation-offset: 0deg;
+	--flip-offset: 0deg;
+	transition: transform var(--animation-duration) ease-in-out, filter var(--animation-duration) ease-in-out, z-index calc(var(--animation-duration) / 2) step-end;
+	transform: translateX(var(--position-offset-x)) translateY(calc(var(--position-offset-y) + var(--turn-offset) + var(--hover-offset))) rotateZ(var(--rotation-offset));
+	will-change: transform;
+	/* TODO: handle animations without relying on z-index transition */
+	z-index: var(--stack-index);
+
+	--edge-top: calc(var(--card-height) / 2 - 50vh);
+	--edge-right: calc(var(--card-width) / -2 + 50vw);
+	--edge-bottom: calc(var(--card-height) / -2 + 50vh);
+	--edge-left: calc(var(--card-width) / 2 - 50vw);
+	--edge-top-sideways: calc(var(--card-width) / 2 - 50vh);
+	--edge-right-sideways: calc(var(--card-height) / -2 + 50vw);
+	--edge-bottom-sideways: calc(var(--card-width) / -2 + 50vh);
+	--edge-left-sideways: calc(var(--card-height) / 2 - 50vw);
+
+	/* JavaScript variables */
+	--stack-size: 1;
+	--stack-index: 0;
+
+	transform-style: flat;
+	perspective: calc(var(--card-height) * 5);
+}
+
+.card.face-down {
+	--flip-offset: -180deg;
+}
+
+.card.face-up.spread {
+	--stack-offset: calc(var(--card-spread-distance) * ((var(--stack-size) - 1) / -2 + var(--stack-index)));
+}
+
+.card.face-down.spread {
+	--stack-offset: calc(-1 * var(--card-spread-distance) * ((var(--stack-size) - 1) / -2 + var(--stack-index)));
+	/* TODO: handle animations without relying on z-index transition */
+	z-index: calc(var(--stack-size) - var(--stack-index));
+}
+
+.card:before {
+	content: "";
+	display: inline-block;
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	border-radius: 10px;
+	opacity: 0;
+	transition: transform var(--animation-duration) ease-in-out, opacity calc(var(--animation-duration) / 2) step-end;
+	transform: rotateY(var(--flip-offset));
+	background-position: center;
+	border: 1px solid gray;
+}
+
+.card:after {
+	content: "";
+	color: white;
+	display: inline-block;
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	border-radius: 10px;
+	border: 4px solid gray;
+	opacity: 0;
+	transition: transform var(--animation-duration) ease-in-out, opacity calc(var(--animation-duration) / 2) step-end;
+	transform: rotateY(var(--flip-offset)) rotateY(180deg);
+	background-position: center;
+}
+
+.card.face-up:before {
+	opacity: 1;
+}
+
+.card.face-down:after {
+	opacity: 1;
+}
+
+/******************************************************************************/
+/* Layouts                                                                    */
+/******************************************************************************/
+
+.card.hand[data-pin="top"] {
+	--position-offset-x: var(--stack-offset);
+	--position-offset-y: var(--edge-top);
+}
+
+.card.hand[data-pin="right"] {
+	--position-offset-x: var(--edge-right-sideways);
+	--position-offset-y: var(--stack-offset);
+	--rotation-offset: -90deg;
+}
+
+.card.hand[data-pin="bottom"] {
+	--position-offset-x: var(--stack-offset);
+	--position-offset-y: var(--edge-bottom);
+}
+
+.card.hand[data-pin="left"] {
+	--position-offset-x: var(--edge-left-sideways);
+	--position-offset-y: calc(-1 * var(--stack-offset));
+	--rotation-offset: 90deg;
+}
+
+.accessory-primary[data-pin="top"] {
+	--position-offset-x: calc(var(--stack-offset) + var(--card-height));
+	--position-offset-y: var(--edge-top);
+}
+
+.accessory-secondary[data-pin="top"] {
+	--position-offset-x: calc(-1 * var(--stack-offset) - var(--card-height));
+	--position-offset-y: var(--edge-top);
+	text-align: right;
+}
+
+.accessory-primary[data-pin="right"] {
+	--position-offset-x: var(--edge-right);
+	--position-offset-y: calc(-1 * var(--stack-offset) - var(--card-region-spacing) - 0.5em);
+	text-align: right;
+}
+
+.accessory-secondary[data-pin="right"] {
+	--position-offset-x: var(--edge-right);
+	--position-offset-y: calc(var(--stack-offset) + var(--card-region-spacing) + 0.5em);
+	text-align: right;
+}
+
+.accessory-primary[data-pin="bottom"] {
+	--position-offset-x: calc(var(--stack-offset) + var(--card-height));
+	--position-offset-y: var(--edge-bottom);
+}
+
+.accessory-secondary[data-pin="bottom"] {
+	--position-offset-x: calc(-1 * var(--stack-offset) - var(--card-height));
+	--position-offset-y: var(--edge-bottom);
+	text-align: right;
+}
+
+.accessory-primary[data-pin="left"] {
+	--position-offset-x: var(--edge-left);
+	--position-offset-y: calc(-1 * var(--stack-offset) - var(--card-region-spacing) - 0.5em);
+}
+
+.accessory-secondary[data-pin="left"] {
+	--position-offset-x: var(--edge-left);
+	--position-offset-y: calc(var(--stack-offset) + var(--card-region-spacing) + 0.5em);
+}
+
+.card.deck {
+	--position-offset-x: calc((var(--card-width) + var(--card-region-spacing)) / -2);
+	--position-offset-y: calc(var(--edge-top) + var(--card-height) + var(--card-region-spacing));
+}
+
+.card.discard {
+	--position-offset-x: calc((var(--card-width) + var(--card-region-spacing)) / 2);
+	--position-offset-y: calc(var(--edge-top) + var(--card-height) + var(--card-region-spacing));
+}
+
+.card.meld {
+	--meld-region-left: calc(var(--edge-left) + var(--card-height) + var(--card-region-spacing));
+	--meld-region-right: calc(var(--edge-right) - var(--card-height) - var(--card-region-spacing));
+	--meld-region-top: calc(var(--edge-top) + (var(--card-height) + var(--card-region-spacing)) * 2);
+	--meld-region-bottom: calc(var(--edge-bottom) - var(--card-height) - 40px - var(--card-region-spacing));
+	--meld-region-height: calc(var(--meld-region-bottom) - var(--meld-region-top));
+	--meld-region-width: calc(var(--meld-region-right) - var(--meld-region-left));
+	--meld-center-x: calc(var(--meld-region-left) + (var(--meld-column) + 1) * (var(--meld-region-width) / (var(--meld-column-count) + 1)));
+	--meld-center-y: calc(var(--meld-region-top) + (var(--meld-row) + 1) * (var(--meld-region-height) / (var(--meld-row-count) + 1)));
+	--position-offset-x: calc(var(--meld-center-x) + var(--stack-offset));
+	--position-offset-y: var(--meld-center-y);
+
+	/* JavaScript variables */
+	--meld-column-count: 1;
+	--meld-column: 0;
+	--meld-row-count: 1;
+	--meld-row: 0;
+
+	/* TODO: handle animations without relying on z-index transition */
+	z-index: calc(var(--stack-index) + var(--meld-row) * 10)
+}
+
+/******************************************************************************/
+/* Interactivity                                                              */
+/******************************************************************************/
+
+.card:hover:is(.hover-up, .hover-down) {
+	--animation-duration: 0.1s;
+}
+
+.card.hover-up:not(.selected):hover {
+	--hover-offset: -10px;
+}
+
+.card.hover-down:not(.selected):hover {
+	--hover-offset: 10px;
+}
+
+.card.selected.hover-up {
+	--hover-offset: -40px;
+}
+
+.card.selected.hover-down {
+	--hover-offset: 40px;
+}
+
+.card.disabled {
+	filter: brightness(0.6) grayscale(0.5);
+}

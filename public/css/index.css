@@ -1,0 +1,46 @@
+*,
+:before,
+:after {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	width: 100vw;
+	height: 100vh;
+	overflow: hidden;
+	margin: 0px;
+	padding: 0px;
+	font-family: -apple-system,
+		BlinkMacSystemFont,
+		'Segoe UI',
+		Roboto,
+		Oxygen,
+		Ubuntu,
+		Cantarell,
+		'Open Sans',
+		'Helvetica Neue',
+		sans-serif;
+	user-select: none;
+	-webkit-user-select: none;
+	cursor: default;
+}
+
+#board {
+	width: 100vw;
+	height: 100vh;
+	position: fixed;
+	top: 0;
+	left: 0;
+	overflow: hidden;
+	padding: 50vh 50vw;
+	background-color: #a80600;
+	background-image: url("https://www.transparenttextures.com/patterns/45-degree-fabric-dark.png");
+	--animation-duration: 0.5s;
+	--card-width: 100px;
+	--card-height: 140px;
+	--card-spread-distance: calc(var(--card-width) / 2.5);
+	--card-region-spacing: calc(var(--card-width) / 5);
+	--card-hover-offset: var(--card-spread-distance);
+	--card-selected-offset: calc(var(--card-hover-offset) * 2);
+}

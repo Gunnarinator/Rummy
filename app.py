@@ -1,4 +1,4 @@
-from flask import Flask, send_file
+from flask import Flask, send_from_directory
 from flask_sock import Sock
 
 import game
@@ -6,9 +6,10 @@ import game
 app = Flask(__name__)
 sock = Sock(app)
 
-@app.route("/")
-async def index():
-    return send_file("public/index.html")
+@app.route('/', defaults={'path': 'index.html'})
+@app.route('/<path:path>')
+async def public(path):
+    return send_from_directory("public", path)
 
 @sock.route('/stream')
 def socket(sock):
