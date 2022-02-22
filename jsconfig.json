@@ -1,0 +1,15 @@
+{
+	"include": [
+		"public/js/**/*.js",
+		"typings/**/*.ts"
+	],
+	"files": ["typings/index.d.ts", "./public/js/index.js"],
+	"compilerOptions": {
+		"allowJs": true,
+		"checkJs": true,
+		"noEmit": true,
+		"module": "ES2015",
+		"lib": ["ES2019", "DOM"],
+		"target": "ES2017"
+	}
+}
