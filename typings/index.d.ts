@@ -117,10 +117,10 @@ declare interface Board {
  * `"start"`: Resets the game to a default state where all players have empty hands, there is no meld, and the deck is shuffled.
  * `"turn"`: Update the current turn state of the game.
  * `"move"`: Indicates that a card has been moved, either by the current player or by someone else. `card.face` being present indicates that the card is face-up.
- * `"meld"`: Indicates that a meld has been created with the face-up cards given in `cards`.
+ * `"redeck"`: Indicates that the deck has been replenished from the discard pile.
  * `"end"`: Indicates that the game has ended. The values of the remaining hands are tallied for scorekeeping.
  */
-declare type GameEvent = LobbyEvent | StartEvent | TurnEvent | MoveEvent | MeldEvent | EndEvent
+declare type GameEvent = LobbyEvent | StartEvent | TurnEvent | MoveEvent | RedeckEvent | EndEvent
 
 /**
  * A message received from the server that updates the state of the lobby.
@@ -180,6 +180,16 @@ declare interface MoveEvent {
     } | {
         type: "discard"
     }
+}
+/**
+ * Indicates that the deck has been replenished from the discard pile.
+ *
+ * All cards in the discard pile are considered to be destroyed, and the deck is replaced with new cards.
+ */
+declare interface RedeckEvent {
+    type: "redeck",
+    /** The server should generate a new list of card IDs to use for the new deck. */
+    new_card_ids: string[]
 }
 /**
  * Indicates that the game has ended. The values of the remaining hands are tallied for scorekeeping. The client keeps track of score.

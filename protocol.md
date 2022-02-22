@@ -467,3 +467,24 @@ Here's a sample of what a complete turn might look like in the websocket channel
 	"state": "draw"
 }
 ```
+
+### Exhausted Decks
+
+When the deck is exhausted, the server will send an event to the client that replaces the deck.
+
+```typescript
+/**
+ * Indicates that the deck has been replenished from the discard pile.
+ *
+ * All cards in the discard pile are considered to be destroyed, and the deck is replaced with new cards.
+ */
+declare interface RedeckEvent {
+    type: "redeck",
+    /** The server should generate a new list of card IDs to use for the new deck. */
+    new_card_ids: string[]
+}
+```
+
+Whether or not the server shuffles the discard pile, it should generate a new card ID for each card.
+
+It also needs to send a new `move` event to move the top card from the deck back to the discard pile.
