@@ -143,35 +143,25 @@ Note that all "stacks" of cards (and card IDs) are ordered from the _bottom up_.
 
 _After_ setting this state, the server can then start to deal out the deck. In order to move a card from one place to another, the `move` event is used.
 
+> Most of the time when using this event, `cards` will only contain one item; the card to move. The one exception to this is when a new meld is formed, or multiple cards are added to it at the same time. In this case, `cards` will contain the 3-4 cards that form the new meld.
+
 ```typescript
 /**
  * Indicates that a card has been moved, either by the current player or by someone else. `card.face` being present indicates that the card is face-up.
  */
 declare interface MoveEvent {
     type: "move"
-    /** The card that was moved. `face` being present indicates that this card is face up (and should be revealed if necessary). */
-    card: {
-		/**
-		 * A randomized string identifying the card. Does not give away anything about the card's value or suit.
-		 */
-		id: string
-		/**
-		 * The face of the card. "null" indicates that the card is face down.
-		 */
-		face?: {
-			suit: "hearts" | "diamonds" | "spades" | "clubs"
-			rank: "A" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10" | "J" | "Q" | "K"
-		}
-	}
-    /** The final destination of the card. The client will animate the card moving from its current position to the new position. */
+    /** The cards that are moved. `face` being present indicates that this card is face up (and should be revealed if necessary). */
+    cards: Card[]
+    /** The final destination of the cards. The client will animate the cards moving from their current position to the new position. */
     destination: {
         type: "player"
         player_id: string
-        /** The position in the player's hand to move the card to. `0` represents the card all the way to the left in the hand. */
+        /** The position in the player's hand to move the cards to. `0` represents the card all the way to the left in the hand. */
         position: number
     } | {
         type: "meld"
-        /** Identifies which meld to put the card in, where `0` is the first meld that was laid down */
+        /** Identifies which meld to put the cards in, where `0` is the first meld that was laid down. This will create a new meld if necessary. */
         meld_number: number
         position: number
     } | {
@@ -395,47 +385,33 @@ Here's a sample of what a complete turn might look like in the websocket channel
 // Meld is valid, so cards move into the meld.
 {
 	"type": "move",
-	"card": {
-		"id": "<card 1>",
-		"face": {
-			"suit": "hearts",
-			"rank": "A"
+	"cards":[
+		{
+			"id": "<card 1>",
+			"face": {
+				"suit": "hearts",
+				"rank": "A"
+			}
+		},
+		{
+			"id": "<card 2>",
+			"face": {
+				"suit": "hearts",
+				"rank": "2"
+			}
+		},
+		{
+			"id": "<card 3>",
+			"face": {
+				"suit": "hearts",
+				"rank": "3"
+			}
 		}
-	},
+	]
 	"destination": {
 		"type": "meld",
 		"meld_number": 0,
 		"position": 0
-	}
-}
-{
-	"type": "move",
-	"card": {
-		"id": "<card 2>",
-		"face": {
-			"suit": "hearts",
-			"rank": "2"
-		}
-	},
-	"destination": {
-		"type": "meld",
-		"meld_number": 0,
-		"position": 1
-	}
-}
-{
-	"type": "move",
-	"card": {
-		"id": "<card 3>",
-		"face": {
-			"suit": "hearts",
-			"rank": "3"
-		}
-	},
-	"destination": {
-		"type": "meld",
-		"meld_number": 0,
-		"position": 2
 	}
 }
 

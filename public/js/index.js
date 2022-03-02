@@ -219,33 +219,37 @@ function removeAndReturnCard(cardID) {
 	}
 	return card || null
 }
+
 /**
- * @param {MoveEvent} event
+ *
+ * @param {Card} card
+ * @param {MoveEvent["destination"]} destination
+ * @returns
  */
-function moveCard(event) {
+function moveCard(card, destination) {
 	if (state.type !== "game") return
-	let id = event.card.id
+	let id = card.id
 	let oldCard = removeAndReturnCard(id)
 	let newCard = {
 		id: id,
-		face: event.card.face || oldCard?.face
+		face: card.face || oldCard?.face
 	}
-	switch (event.destination.type) {
+	switch (destination.type) {
 		case "discard":
 			state.board.discard.push(newCard)
 			break
 		case "meld":
-			let meld = state.board.melds[event.destination.meld_number]
+			let meld = state.board.melds[destination.meld_number]
 			if (meld) {
-				meld.splice(event.destination.position, 0, newCard)
+				meld.splice(destination.position, 0, newCard)
 			} else {
 				state.board.melds.push([newCard])
 			}
 			break
 		case "player":
 			// @ts-ignore
-			let player = state.board.players.find(({ id }) => id === event.destination.player_id)
-			player.hand.splice(event.destination.position, 0, newCard)
+			let player = state.board.players.find(({ id }) => id === destination.player_id)
+			player.hand.splice(destination.position, 0, newCard)
 			break
 	}
 	updateBoardState()
@@ -257,7 +261,9 @@ function moveCard(event) {
 function handleEvent(event) {
 	switch (event.type) {
 		case "move":
-			moveCard(event)
+			for (let card of event.cards.reverse()) {
+				moveCard(card, event.destination)
+			}
 			break
 		case "start":
 			resetBoard(event)

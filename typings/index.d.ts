@@ -164,17 +164,17 @@ declare interface TurnEvent {
  */
 declare interface MoveEvent {
     type: "move"
-    /** The card that was moved. `face` being present indicates that this card is face up (and should be revealed if necessary). */
-    card: Card
-    /** The final destination of the card. The client will animate the card moving from its current position to the new position. */
+    /** The cards that are moved. `face` being present indicates that this card is face up (and should be revealed if necessary). */
+    cards: Card[]
+    /** The final destination of the cards. The client will animate the cards moving from their current position to the new position. */
     destination: {
         type: "player"
         player_id: string
-        /** The position in the player's hand to move the card to. `0` represents the card all the way to the left in the hand. */
+        /** The position in the player's hand to move the cards to. `0` represents the card all the way to the left in the hand. */
         position: number
     } | {
         type: "meld"
-        /** Identifies which meld to put the card in, where `0` is the first meld that was laid down. This will create a new meld if necessary. */
+        /** Identifies which meld to put the cards in, where `0` is the first meld that was laid down. This will create a new meld if necessary. */
         meld_number: number
         position: number
     } | {
