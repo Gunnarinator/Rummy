@@ -3,5 +3,7 @@
 		"files.trimTrailingWhitespace": false
 	},
 	"python.analysis.diagnosticMode": "workspace",
-	"python.analysis.typeCheckingMode": "basic"
+	"python.analysis.typeCheckingMode": "basic",
+	"python.defaultInterpreterPath": "./env/bin/python",
+	"python.terminal.activateEnvInCurrentTerminal": true
 }
