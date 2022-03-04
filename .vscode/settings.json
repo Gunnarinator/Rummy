@@ -1,5 +1,7 @@
 {
 	"[markdown]": {
 		"files.trimTrailingWhitespace": false
-	}
+	},
+	"python.analysis.diagnosticMode": "workspace",
+	"python.analysis.typeCheckingMode": "basic"
 }

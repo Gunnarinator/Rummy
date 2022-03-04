@@ -1,0 +1,10 @@
+{
+	"recommendations": [
+		"njpwerner.autodocstring",
+		"github.copilot",
+		"ms-vsliveshare.vsliveshare-pack",
+		"ms-python.vscode-pylance",
+		"ms-python.python",
+		"VisualStudioExptTeam.vscodeintellicode"
+	]
+}
