@@ -259,6 +259,7 @@ function moveCard(card, destination) {
  * @param {GameEvent} event
  */
 function handleEvent(event) {
+	console.log(`Incoming ${event.type} event`, event)
 	switch (event.type) {
 		case "move":
 			for (let card of event.cards.reverse()) {
@@ -303,7 +304,31 @@ function handleNextEvent() {
  */
 function queueEvent(event) {
 	eventQueue.push(event)
-	if (eventQueueTimer == null) {
+	if (eventQueueTimer == null && document.readyState === "complete") {
 		handleNextEvent()
 	}
+}
+
+let pageLoadTime = Date.now()
+let ws = new WebSocket(`${location.protocol.replace("http", "ws")}//${location.host}/stream`)
+ws.onmessage = d => handleEvent(JSON.parse(d.data))
+ws.onclose = () => ws = null
+ws.onerror = console.error
+
+function init() {
+	if (eventQueue.length > 0) handleNextEvent()
+}
+
+if (document.readyState === "complete") {
+	init()
+} else {
+	document.addEventListener("DOMContentLoaded", () => document.readyState === "complete" && init())
+}
+
+/**
+ * @param {Action} action
+ */
+function sendAction(action) {
+	console.log(`Sending ${action.type} action`, action)
+	if (ws) ws.send(JSON.stringify(action))
 }
