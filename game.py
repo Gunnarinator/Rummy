@@ -8,13 +8,33 @@ class Game:
 		self.lobby = lobby.code
 		games[self.lobby] = self
 
-# Action = Union[JoinAction, StartAction, DrawAction, MeldAction, LayAction, DiscardAction]
+# Action = Union[NameAction, AIAction, JoinAction, StartAction, DrawAction, MeldAction, LayAction, DiscardAction]
 def handleAction(action: Action, connection: Connection):
+	print("Player " + connection.id + " (" + connection.name + "): " + str(action) + " action")
 	lobby = connection.lobby
-	# If the game hasn't started het, this will be None
+	# If the game hasn't started yet, this will be None
 	game = games.get(lobby.code, None)
 
-	if isinstance(action, JoinAction):
+	if isinstance(action, NameAction):
+
+		# Sets the name of the current player.
+		# The server should verify that the name is valid (not too long, not already in use, must contain a letter or number).
+		#  - name (str): The name of the player.
+		n = action.name.strip()
+		assert len(n) <= 20
+		assert any(c.isalnum() for c in n)
+		connection.name = n
+		connection.lobby.informPlayersOfLobby()
+
+	elif isinstance(action, AIAction):
+
+		# Add or remove an AI player.
+		# If adding a player, the server should verify that there's room in the lobby and that the game has not started.
+		# If removing a player, the server should verify that there is an AI player in the lobby to remove, and the game has not started.
+		#  - action (Literal["add", "remove"]): The action to perform.
+		raise NotImplementedError()
+
+	elif isinstance(action, JoinAction):
 
 		# Joins a game. A game is left when the websocket connection is closed.
 		# The server should verify that the game is not already running, and that thare are less than 4 players in the game.

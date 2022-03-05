@@ -18,7 +18,8 @@ class Connection:
     def sendEvent(self, event: Event):
         try:
             self.sock.send(event.encodeString())
-        except:
+        except Exception as e:
+            print(e)
             try:
                 self.lobby.removePlayer(self)
             except: pass
@@ -63,6 +64,7 @@ class Lobby:
                     ) for p in map(lambda x: connections[x], self.connections)]
                 )
             ))
+
 lobbies: dict[str, Lobby] = {}
 
 def addConnection(sock: Server):
@@ -79,9 +81,11 @@ def addConnection(sock: Server):
                 action = parseAction(data)
                 try:
                     handleAction(action, connection)
-                except:
+                except Exception as e:
+                    print(e)
                     raise RuntimeError("Error handling action {}".format(action))
-        except:
+        except Exception as e:
+            print(e)
             try:
                 connection.lobby.removePlayer(connection)
             except: pass
@@ -91,7 +95,8 @@ def addConnection(sock: Server):
     except: pass
     try:
         sock.close()
-    except: pass
+    except Exception as e:
+        print(e)
 
 def removeConnection(id: str):
     try:

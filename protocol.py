@@ -406,6 +406,60 @@ A message recieved from the server.
 `"end"`: Indicates that the game has ended. The values of the remaining hands are tallied for scorekeeping.
 """
 
+class NameAction(Decodable):
+    """
+    Sets the name of the current player.
+
+    The server should verify that the name is valid (not too long, not already in use, must contain a letter or number).
+
+    Properties:
+        name (str): The name of the player.
+    """
+    def __init__(self, name: str):
+        """
+        Sets the name of the current player.
+
+        The server should verify that the name is valid (not too long, not already in use, must contain a letter or number).
+
+        Args:
+            name (str): The name of the player.
+        """
+        self.name = name
+
+    @classmethod
+    def decodeObject(cls, data: JSONSafe) -> Self:
+        assert isinstance(data, dict)
+        assert isinstance(data["name"], str)
+        return NameAction(name=data["name"])
+
+class AIAction(Decodable):
+    """
+    Add or remove an AI player.
+
+    If adding a player, the server should verify that there's room in the lobby and that the game has not started.
+    If removing a player, the server should verify that there is an AI player in the lobby to remove, and the game has not started.
+
+    Properties:
+        action (Literal["add", "remove"]): The action to perform.
+    """
+    def __init__(self, action: Literal["add", "remove"]):
+        """
+        Add or remove an AI player.
+
+        If adding a player, the server should verify that there's room in the lobby and that the game has not started.
+        If removing a player, the server should verify that there is an AI player in the lobby to remove, and the game has not started.
+
+        Args:
+            action (Literal["add", "remove"]): The action to perform.
+        """
+        self.action = action
+
+    @classmethod
+    def decodeObject(cls, data: JSONSafe) -> Self:
+        assert isinstance(data, dict)
+        assert data["action"] in ["add", "remove"]
+        return AIAction(action=data["action"])
+
 class JoinAction(Decodable):
     """
     Joins a game. A game is left when the websocket connection is closed.
@@ -551,7 +605,7 @@ class DiscardAction(Decodable):
         assert isinstance(data["card_id"], str)
         return DiscardAction(data["card_id"])
 
-Action = Union[JoinAction, StartAction, DrawAction, MeldAction, LayAction, DiscardAction]
+Action = Union[NameAction, AIAction, JoinAction, StartAction, DrawAction, MeldAction, LayAction, DiscardAction]
 """
 A message sent to the server. Indicates an action that the client wishes to perform.
 
@@ -570,6 +624,8 @@ The server should verify the legality of every action taken by the client, inclu
 """
 
 actionTypeMap: dict[str, Type[Action]] = {
+    "name": NameAction,
+    "ai": AIAction,
     "join": JoinAction,
     "start": StartAction,
     "draw": DrawAction,
