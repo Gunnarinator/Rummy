@@ -36,3 +36,9 @@ You can specify a host and/or port (default 500) using respective options (this 
 ```
 pipenv run flask run --host=0.0.0.0 --port 80
 ```
+
+## Architecture
+
+Super Rummy uses a client-server architecture. Events are sent from the server to the client to notify them of changes in the board state, while actions are sent the other way to inform the server of the user's intent.
+
+For more details, head over to the [architecture document](architecture.md).
