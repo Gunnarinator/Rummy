@@ -2,6 +2,8 @@
 
 A **client-server** architecture is used.
 
+![UML Diagram](uml.png)
+
 ## Server
 
 The server listens for incoming [WebSocket](https://www.html5rocks.com/en/tutorials/websockets/basics/) connections from the client. Once established, WebSockets act as a computer's form of a chat thread; either side (the client or the server) can send messages to each other. This connection is maintained throughout the player's session.
