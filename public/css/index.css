@@ -125,6 +125,11 @@ button.primary:active {
 	margin: 5vh auto;
 	text-align: center;
 	font-size: 10vh;
+	user-select: text;
+	-webkit-user-select: text;
+	user-select: all;
+	-webkit-user-select: all;
+	cursor: text;
 }
 
 .lobby-options {
