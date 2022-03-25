@@ -1,4 +1,5 @@
 //@ts-check
+import { generateName } from "./names.js"
 
 /** @type {{type: "loading"} | {type: "lobby", lobby: Lobby} | {type: "game", board: Board, ui: GameUIState}} */
 let state = { type: "loading" }
@@ -190,6 +191,12 @@ function updateBoardState() {
 	}
 }
 
+function updateLobbyState() {
+	if (state.type !== "lobby") return
+	let lobby = state.lobby
+	document.querySelector(".lobby-code").textContent = lobby.code.replace(/.../, "$& ")
+}
+
 /**
  * @param {string} cardID
  * @return {Card | null}
@@ -277,6 +284,18 @@ function handleEvent(event) {
 			}
 			updateBoardState()
 			break
+		case "lobby":
+			if (state.type === "loading") {
+				sendAction({
+					type: "name",
+					name: generateName()
+				})
+			}
+			state.type = "lobby"
+			//@ts-ignore
+			state.lobby = event.lobby
+			updateLobbyState()
+			break
 	}
 }
 
@@ -317,12 +336,24 @@ ws.onerror = console.error
 
 function init() {
 	if (eventQueue.length > 0) handleNextEvent()
+	document.querySelector("#add-ai-button").addEventListener("click", () => {
+		sendAction({
+			type: "ai",
+			action: "add"
+		})
+	})
+	document.querySelector("#remove-ai-button").addEventListener("click", () => {
+		sendAction({
+			type: "ai",
+			action: "remove"
+		})
+	})
 }
 
 if (document.readyState === "complete") {
 	init()
 } else {
-	document.addEventListener("DOMContentLoaded", () => document.readyState === "complete" && init())
+	document.addEventListener("DOMContentLoaded", init)
 }
 
 /**
