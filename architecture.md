@@ -1,6 +1,6 @@
 # Architecture
 
-A **client-server** architecture is used.
+An **event-driven system architecture** architecture is used.
 
 ![UML Diagram](uml.png)
 
