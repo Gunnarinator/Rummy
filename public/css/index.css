@@ -193,6 +193,7 @@ button.primary:active {
 	overflow: hidden;
 	height: 1.2em;
 	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .lobby-players:empty:before {
