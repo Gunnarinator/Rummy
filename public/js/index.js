@@ -195,6 +195,19 @@ function updateLobbyState() {
 	if (state.type !== "lobby") return
 	let lobby = state.lobby
 	document.querySelector(".lobby-code").textContent = lobby.code.replace(/.../, "$& ")
+	document.querySelector(".lobby-players").innerHTML = ""
+	if (lobby.players.length > 1) {
+		for (let player of lobby.players) {
+			let li = document.createElement("li")
+			let name = player.name
+			if (player.id == lobby.current_player_id)
+				name += " (you)"
+			li.textContent = name
+			document.querySelector(".lobby-players").appendChild(li)
+		}
+	}
+	(/** @type {HTMLButtonElement}*/ (document.querySelector("#remove-ai-button"))).disabled = !lobby.players.some(player => !player.human)
+	document.querySelector("#lobby-primary").textContent = lobby.players.length > 1 ? "Start Game" : "Join Game"
 }
 
 /**
@@ -347,6 +360,24 @@ function init() {
 			type: "ai",
 			action: "remove"
 		})
+	})
+	document.querySelector("#lobby-primary").addEventListener("click", () => {
+		if (state.type !== "lobby") return
+		let lobby = state.lobby
+		if (lobby.players.length === 1) {
+			let code = ""
+			while (code.replace(/\D/g, "").length != 6) {
+				code = prompt("Enter a 6-digit lobby code:", code)
+			}
+			sendAction({
+				type: "join",
+				code: code.replace(/\D/g, "")
+			})
+		} else {
+			sendAction({
+				type: "start"
+			})
+		}
 	})
 }
 
