@@ -24,6 +24,8 @@ body {
 	user-select: none;
 	-webkit-user-select: none;
 	cursor: default;
+	background-color: #a80600;
+	background-image: url("https://www.transparenttextures.com/patterns/45-degree-fabric-dark.png");
 }
 
 #board {
@@ -34,8 +36,6 @@ body {
 	left: 0;
 	overflow: hidden;
 	padding: 50vh 50vw;
-	background-color: #a80600;
-	background-image: url("https://www.transparenttextures.com/patterns/45-degree-fabric-dark.png");
 	--animation-duration: 0.5s;
 	--card-width: 100px;
 	--card-height: 140px;
@@ -43,6 +43,19 @@ body {
 	--card-region-spacing: calc(var(--card-width) / 5);
 	--card-hover-offset: var(--card-spread-distance);
 	--card-selected-offset: calc(var(--card-hover-offset) * 2);
+	transition: opacity 0.3 0.15s;
+	opacity: 1;
+}
+
+#lobby {
+	transition: opacity 0.3 0.15s;
+	opacity: 1;
+}
+
+#board.hidden, #lobby.hidden {
+	transition: opacity 0.3s;
+	opacity: 0;
+	pointer-events: none;
 }
 
 .toolbar {
@@ -104,7 +117,7 @@ button.primary:active {
 	float: right;
 }
 
-.lobby {
+#lobby {
 	position: fixed;
 	top: 0;
 	left: 0;

@@ -8,6 +8,11 @@ The game starts with a single 52-card shuffled deck.
 >
 > Name (technical): Number of decks (`deck_count`)  
 > Values [default]: [`1`], `2`, `3`
+>
+> **Variable:** Players can elect to add 2 jokers for every deck, acting as wild.
+>
+> Name (technical): Add joker wild cards (`enable_jokers`)
+> Values [default]: [`false`], `true`
 
 Cards are delt by the server in a round-robin fashion. With only 2 players, 10 cards are delt to each player. For 3-4 player games, 7 cards are delt per player. 5-6 player games are dealt with 6 cards per player.
 
@@ -24,7 +29,7 @@ Players take turns going to the left. In the first round, the first player to jo
 > **Variable:** Players can choose instead to start each round with the winner from the previous round. In a round where there is no "winner," the same starting person starts again the next round.
 >
 > Name (technical): Start the round with... (`first_turn`)  
-> Values [default]: [`"next_player"`], `"prev_winner"`
+> Values [default]: [`"next_player"`], `"prev_winner"`, `"random"`
 
 The first move in a turn must be to draw a card. This can either be the top card of the discard pile, or the top card of the deck.
 

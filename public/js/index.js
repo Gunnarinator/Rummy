@@ -29,6 +29,8 @@ function resetBoard(event) {
 		}
 	}
 	let boardElement = id("board")
+	if (boardElement.classList.contains("hidden")) boardElement.classList.remove("hidden")
+	if (!id("lobby").classList.contains("hidden")) id("lobby").classList.add("hidden")
 	boardElement.innerHTML = ""
 	for (let cardID of event.card_ids) {
 		let card = document.createElement("div")
@@ -193,6 +195,8 @@ function updateBoardState() {
 
 function updateLobbyState() {
 	if (state.type !== "lobby") return
+	if (id("lobby").classList.contains("hidden")) id("lobby").classList.remove("hidden")
+	if (!id("board").classList.contains("hidden")) id("board").classList.add("hidden")
 	let lobby = state.lobby
 	document.querySelector(".lobby-code").textContent = lobby.code.replace(/.../, "$& ")
 	document.querySelector(".lobby-players").innerHTML = ""
@@ -336,19 +340,15 @@ function handleNextEvent() {
  */
 function queueEvent(event) {
 	eventQueue.push(event)
-	if (eventQueueTimer == null && document.readyState === "complete") {
+	if (eventQueueTimer == null) {
 		handleNextEvent()
 	}
 }
 
-let pageLoadTime = Date.now()
-let ws = new WebSocket(`${location.protocol.replace("http", "ws")}//${location.host}/stream`)
-ws.onmessage = d => handleEvent(JSON.parse(d.data))
-ws.onclose = () => ws = null
-ws.onerror = console.error
+/** @type {WebSocket} */
+let ws = null
 
 function init() {
-	if (eventQueue.length > 0) handleNextEvent()
 	document.querySelector("#add-ai-button").addEventListener("click", () => {
 		sendAction({
 			type: "ai",
@@ -379,6 +379,10 @@ function init() {
 			})
 		}
 	})
+	ws = new WebSocket(`${location.protocol.replace("http", "ws")}//${location.host}/stream`)
+	ws.onmessage = d => queueEvent(JSON.parse(d.data))
+	ws.onclose = () => ws = null
+	ws.onerror = console.error
 }
 
 if (document.readyState === "complete") {

@@ -1,11 +1,16 @@
+from random import shuffle
+from uuid import uuid4
+
 import classes
+from protocol import CardFace, CardRank
 
-# this just returns one or more decks, unshuffled.
+# this just returns one or more decks, shuffled.
 
 
-def newDeck(decks=1, jokerval=20):
-    retval = []
-    joker = 0
+def newDeck(decks: int = 1, jokers: int = 0):
+    retval: list[classes.ServerCard] = []
+    ranks: list[CardRank] = ["A", "2", "3", "4",
+                             "5", "6", "7", "8", "9", "10", "J", "Q", "K"]
     for deck in range(decks):
         for s in range(4):
             if(s == 1):
@@ -14,29 +19,15 @@ def newDeck(decks=1, jokerval=20):
                 suit = "hearts"
             elif(s == 3):
                 suit = "diamonds"
+            else:
+                suit = "spades"
             for n in range(13):
-                if(n == 0):
-                    num = 'A'
-                    val = 11
-                elif(n == 9):
-                    num = '0'
-                    val == 10
-                elif(n == 10):
-                    num = 'J'
-                    val = 10
-                elif(n == 11):
-                    num = 'Q'
-                    val = 10
-                elif(n == 12):
-                    num = 'K'
-                    val = 10
-                else:
-                    num = chr(n)
-                    val = n
-                id = deck*54 + s*13 + n
-                retval.append(classes.Card(id, num, suit, val))
+                rank: CardRank = ranks[n]
+                retval.append(classes.ServerCard(CardFace(suit, rank)))
         id = deck*54 + 52
-        retval.append(classes.Card(id, 'W', "joker", jokerval))
+    for n in range(jokers):
+        retval.append(classes.ServerCard(CardFace("joker", "W")))
+    shuffle(retval)
     return retval
 
 

@@ -3,7 +3,9 @@ from typing import Literal, Mapping, Optional, Protocol, Sequence, Type, Union
 
 from typing_extensions import Self
 
-JSONSafe = Union[Mapping[str, "JSONSafe"], Sequence["JSONSafe"], str, int, float, bool, None]
+JSONSafe = Union[Mapping[str, "JSONSafe"],
+                 Sequence["JSONSafe"], str, int, float, bool, None]
+
 
 class Encodable(Protocol):
     def encodeObject(self) -> JSONSafe:
@@ -11,6 +13,7 @@ class Encodable(Protocol):
 
     def encodeString(self) -> str:
         return json.dumps(self.encodeObject())
+
 
 class Decodable(Protocol):
     @classmethod
@@ -21,8 +24,11 @@ class Decodable(Protocol):
     def decodeString(cls, data: str) -> Self:
         return cls.decodeObject(json.loads(data))
 
-CardSuit = Literal["hearts", "diamonds", "spades", "clubs"]
-CardRank = Literal["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"]
+
+CardSuit = Literal["hearts", "diamonds", "spades", "clubs", "joker"]
+CardRank = Literal["A", "2", "3", "4", "5",
+                   "6", "7", "8", "9", "10", "J", "Q", "K", "W"]
+
 
 class CardFace(Encodable):
     def __init__(self, suit: CardSuit, rank: CardRank):
@@ -35,6 +41,7 @@ class CardFace(Encodable):
             "rank": self.rank
         }
 
+
 class ClientCard(Encodable):
     def __init__(self, id: str, face: Optional[CardFace] = None):
         self.id = id
@@ -46,7 +53,9 @@ class ClientCard(Encodable):
             "face": self.face.encodeObject() if self.face else None
         }
 
+
 ClientStack = list[ClientCard]
+
 
 class ClientPlayer(Encodable):
     """
@@ -78,6 +87,7 @@ class ClientPlayer(Encodable):
             "human": self.human
         }
 
+
 class TurnState(Encodable):
     def __init__(self, player_id: str, state: Literal["draw", "play"]):
         self.player_id = player_id
@@ -89,6 +99,7 @@ class TurnState(Encodable):
             "state": self.state
         }
 
+
 class LobbyPlayer(Encodable):
     """
     Properties:
@@ -96,6 +107,7 @@ class LobbyPlayer(Encodable):
         id (str): A randomized string uniquely identifying the player.
         human (bool): Whether the player is human.
     """
+
     def __init__(self, name: str, id: str, human: bool):
         """
         Args:
@@ -114,6 +126,7 @@ class LobbyPlayer(Encodable):
             "human": self.human
         }
 
+
 class ClientLobby(Encodable):
     """
     A lobby of players.
@@ -123,6 +136,7 @@ class ClientLobby(Encodable):
         current_player_id (str): The player ID string of the current user.
         code (str): The code to join the current game.
     """
+
     def __init__(self, players: list[LobbyPlayer], current_player_id: str, code: str):
         """
         A lobby of players.
@@ -146,6 +160,7 @@ class ClientLobby(Encodable):
             "code": self.code
         }
 
+
 class ClientBoard(Encodable):
     """
     Properties:
@@ -157,6 +172,7 @@ class ClientBoard(Encodable):
         discard (ClientStack): The stack of face-up cards that have been discarded. The last card to be discarded is the first item in the array.
         game_code (str): A code that other players may use to join the game before it starts.
     """
+
     def __init__(self, players: list[ClientPlayer], current_player_id: str, turn: Optional[TurnState], melds: list[ClientStack], deck: ClientStack, discard: ClientStack, game_code: str):
         """
         Args:
@@ -187,6 +203,7 @@ class ClientBoard(Encodable):
             "game_code": self.game_code
         }
 
+
 class LobbyEvent(Encodable):
     """
     A message received from the server that updates the state of the lobby.
@@ -194,6 +211,7 @@ class LobbyEvent(Encodable):
     Properties:
         lobby (ClientLobby): The lobby state.
     """
+
     def __init__(self, lobby: ClientLobby):
         """
         A message received from the server that updates the state of the lobby.
@@ -206,6 +224,7 @@ class LobbyEvent(Encodable):
     def encodeObject(self) -> JSONSafe:
         return {"type": "lobby", "lobby": self.lobby.encodeObject()}
 
+
 class StartEvent(Encodable):
     """
     Resets the game to a default state where all players have empty hands, there is no meld, and the deck is shuffled.
@@ -216,6 +235,7 @@ class StartEvent(Encodable):
         card_ids (list[str]): A list of face-down card IDs to include in the deck. The order matches the shuffled state of the deck.
         game_code (str): A code that other players may use to join the game before it starts.
     """
+
     def __init__(self, players: list[ClientPlayer], current_player_id: str, card_ids: list[str], game_code: str):
         """
         Resets the game to a default state where all players have empty hands, there is no meld, and the deck is shuffled.
@@ -240,6 +260,7 @@ class StartEvent(Encodable):
             "game_code": self.game_code
         }
 
+
 class TurnEvent(Encodable):
     """
     Updates the current turn state of the game.
@@ -250,6 +271,7 @@ class TurnEvent(Encodable):
             `"draw"`: The player must draw a card either from the discard pile or the deck.
             `"play"`: The player can try to create or lay on melds as they see fit, and then they must discard a card.
     """
+
     def __init__(self, player_id: str, state: Literal["draw", "play"]):
         """
         Updates the current turn state of the game.
@@ -268,12 +290,14 @@ class TurnEvent(Encodable):
     def encodeObject(self) -> JSONSafe:
         return {"type": "turn", "player_id": self.player_id, "state": self.state}
 
+
 class MoveDestinationPlayer(Encodable):
     """
     Properties:
         player_id (str): The player ID of the player to move the cards to.
         position (int): The position in the player's hand to move the cards to. `0` represents the card all the way to the left in the hand.
     """
+
     def __init__(self, player_id: str, position: int):
         """
         Args:
@@ -290,12 +314,14 @@ class MoveDestinationPlayer(Encodable):
             "position": self.position
         }
 
+
 class MoveDestinationMeld(Encodable):
     """
     Properties:
         meld_number (int): The number of the meld to move the cards to. `0` represents the first meld that was laid down.
         position (int): The position in the meld to move the cards to. `0` represents the card all the way to the left in the meld.
     """
+
     def __init__(self, meld_number: int, position: int):
         """
         Args:
@@ -312,11 +338,13 @@ class MoveDestinationMeld(Encodable):
             "position": self.position
         }
 
+
 class MoveDesinationDiscard(Encodable):
     def encodeObject(self) -> JSONSafe:
         return {
             "type": "discard"
         }
+
 
 class MoveEvent(Encodable):
     """
@@ -326,6 +354,7 @@ class MoveEvent(Encodable):
         cards (list[ClientCard]): The cards that are moved. `face` being present indicates that this card is face up (and should be revealed if necessary).
         destination (Union[MoveDestinationPlayer, MoveDestinationMeld, MoveDestinationDiscard]): The final destination of the cards. The client will animate the cards moving from their current position to the new position.
     """
+
     def __init__(self, cards: list[ClientCard], destination: Union[MoveDestinationPlayer, MoveDestinationMeld, MoveDesinationDiscard]):
         """
         Indicates that a card has been moved, either by the current player or by someone else. `card.face` being present indicates that the card is face-up.
@@ -344,6 +373,7 @@ class MoveEvent(Encodable):
             "destination": self.destination.encodeObject()
         }
 
+
 class RedeckEvent(Encodable):
     """
     Indicates that the deck has been replenished from the discard pile.
@@ -353,6 +383,7 @@ class RedeckEvent(Encodable):
     Properties:
         new_card_ids (list[str]): The server should generate a new list of card IDs to use for the new deck.
     """
+
     def __init__(self, new_card_ids: list[str]):
         """
         Indicates that the deck has been replenished from the discard pile.
@@ -367,6 +398,7 @@ class RedeckEvent(Encodable):
     def encodeObject(self) -> JSONSafe:
         return {"type": "redeck", "new_card_ids": self.new_card_ids}
 
+
 class EndEvent(Encodable):
     """
     Indicates that the game has ended. The values of the remaining hands are tallied for scorekeeping. The client keeps track of score.
@@ -375,6 +407,7 @@ class EndEvent(Encodable):
         winner_id (str): The player ID of the winner.
         hand_values (dict[str, int]): A map (keyed by player ID) showing the hand values of the losing players. These point values will be added to the winner's score. "Rummy" should already be accounted for.
     """
+
     def __init__(self, winner_id: str, hand_values: dict[str, int]):
         """
         Indicates that the game has ended. The values of the remaining hands are tallied for scorekeeping. The client keeps track of score.
@@ -394,7 +427,8 @@ class EndEvent(Encodable):
         }
 
 
-Event = Union[LobbyEvent, StartEvent, TurnEvent, MoveEvent, RedeckEvent, EndEvent]
+Event = Union[LobbyEvent, StartEvent,
+              TurnEvent, MoveEvent, RedeckEvent, EndEvent]
 """
 A message recieved from the server.
 
@@ -406,6 +440,7 @@ A message recieved from the server.
 `"end"`: Indicates that the game has ended. The values of the remaining hands are tallied for scorekeeping.
 """
 
+
 class NameAction(Decodable):
     """
     Sets the name of the current player.
@@ -415,6 +450,7 @@ class NameAction(Decodable):
     Properties:
         name (str): The name of the player.
     """
+
     def __init__(self, name: str):
         """
         Sets the name of the current player.
@@ -432,6 +468,7 @@ class NameAction(Decodable):
         assert isinstance(data["name"], str)
         return NameAction(name=data["name"])
 
+
 class AIAction(Decodable):
     """
     Add or remove an AI player.
@@ -442,6 +479,7 @@ class AIAction(Decodable):
     Properties:
         action (Literal["add", "remove"]): The action to perform.
     """
+
     def __init__(self, action: Literal["add", "remove"]):
         """
         Add or remove an AI player.
@@ -460,6 +498,7 @@ class AIAction(Decodable):
         assert data["action"] in ["add", "remove"]
         return AIAction(action=data["action"])
 
+
 class JoinAction(Decodable):
     """
     Joins a game. A game is left when the websocket connection is closed.
@@ -469,6 +508,7 @@ class JoinAction(Decodable):
     Properties:
         code (str): The game code to join.
     """
+
     def __init__(self, code: str):
         """
         Joins a game. A game is left when the websocket connection is closed.
@@ -486,6 +526,7 @@ class JoinAction(Decodable):
         assert isinstance(data["code"], str)
         return JoinAction(data["code"])
 
+
 class StartAction(Decodable):
     """
     Starts the current game.
@@ -496,6 +537,7 @@ class StartAction(Decodable):
     def decodeObject(cls, data: JSONSafe) -> Self:
         return StartAction()
 
+
 class DrawAction(Decodable):
     """
     Draws a card from the deck or the discard pile.
@@ -505,6 +547,7 @@ class DrawAction(Decodable):
     Properties:
         card_id (str): The ID of the card to draw. This can be the top card of the deck or the top card of the discard pile.
     """
+
     def __init__(self, card_id: str):
         """
         Draws a card from the deck or the discard pile.
@@ -522,6 +565,7 @@ class DrawAction(Decodable):
         assert isinstance(data["card_id"], str)
         return DrawAction(data["card_id"])
 
+
 class MeldAction(Decodable):
     """
     Lay down some cards to create a meld.
@@ -531,6 +575,7 @@ class MeldAction(Decodable):
     Properties:
         card_ids (list[str]): A list of card IDs to lay down.
     """
+
     def __init__(self, card_ids: list[str]):
         """
         Lay down some cards to create a meld.
@@ -547,7 +592,8 @@ class MeldAction(Decodable):
         assert isinstance(data, dict)
         assert isinstance(data["card_ids"], list)
         assert all(isinstance(card_id, str) for card_id in data["card_ids"])
-        return MeldAction(data["card_ids"]) #type: ignore
+        return MeldAction(data["card_ids"])  # type: ignore
+
 
 class LayAction(Decodable):
     """
@@ -559,6 +605,7 @@ class LayAction(Decodable):
         card_id (str): The ID of the card to lay.
         meld_number (int): The index of the meld to add the card to.
     """
+
     def __init__(self, card_id: str, meld_number: int):
         """
         Lay down a card to add to an existing meld.
@@ -579,6 +626,7 @@ class LayAction(Decodable):
         assert isinstance(data["meld_number"], int)
         return LayAction(data["card_id"], data["meld_number"])
 
+
 class DiscardAction(Decodable):
     """
     Discard a card. This ends the player's turn.
@@ -588,6 +636,7 @@ class DiscardAction(Decodable):
     Properties:
         card_id (str): The ID of the card to discard.
     """
+
     def __init__(self, card_id: str):
         """
         Discard a card. This ends the player's turn.
@@ -605,7 +654,9 @@ class DiscardAction(Decodable):
         assert isinstance(data["card_id"], str)
         return DiscardAction(data["card_id"])
 
-Action = Union[NameAction, AIAction, JoinAction, StartAction, DrawAction, MeldAction, LayAction, DiscardAction]
+
+Action = Union[NameAction, AIAction, JoinAction, StartAction,
+               DrawAction, MeldAction, LayAction, DiscardAction]
 """
 A message sent to the server. Indicates an action that the client wishes to perform.
 

@@ -5,5 +5,8 @@
 	"python.analysis.diagnosticMode": "workspace",
 	"python.analysis.typeCheckingMode": "basic",
 	"python.defaultInterpreterPath": "./env/bin/python",
-	"python.terminal.activateEnvInCurrentTerminal": true
+	"python.terminal.activateEnvInCurrentTerminal": true,
+	"editor.insertSpaces": true,
+	"editor.tabSize": 4,
+	"editor.stickyTabStops": true
 }
