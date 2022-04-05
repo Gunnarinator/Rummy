@@ -43,17 +43,17 @@ body {
 	--card-region-spacing: calc(var(--card-width) / 5);
 	--card-hover-offset: var(--card-spread-distance);
 	--card-selected-offset: calc(var(--card-hover-offset) * 2);
-	transition: opacity 0.3 0.15s;
+	transition: opacity 0.3 linear 0.15s;
 	opacity: 1;
 }
 
 #lobby {
-	transition: opacity 0.3 0.15s;
+	transition: opacity 0.3 linear 0.15s;
 	opacity: 1;
 }
 
 #board.hidden, #lobby.hidden {
-	transition: opacity 0.3s;
+	transition: opacity 0.3s linear;
 	opacity: 0;
 	pointer-events: none;
 }

@@ -1,5 +1,4 @@
 //@ts-check
-import { generateName } from "./names.js"
 
 /** @type {{type: "loading"} | {type: "lobby", lobby: Lobby} | {type: "game", board: Board, ui: GameUIState}} */
 let state = { type: "loading" }
@@ -302,12 +301,6 @@ function handleEvent(event) {
 			updateBoardState()
 			break
 		case "lobby":
-			if (state.type === "loading") {
-				sendAction({
-					type: "name",
-					name: generateName()
-				})
-			}
 			state.type = "lobby"
 			//@ts-ignore
 			state.lobby = event.lobby

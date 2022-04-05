@@ -197,4 +197,4 @@ def nextNum(card):
         return '2'
     # 2-8 are cool because the next number is also one digit so we have other functions for that.
     elif(card.num.isdigit()):
-        return chr(int(card.num)+1)
+        return str(int(card.num)+1)

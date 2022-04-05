@@ -2,7 +2,7 @@ from random import shuffle
 from uuid import uuid4
 
 import funlib
-from lobby import *
+import lobby
 from protocol import *
 
 # This file should contain all classes created by Super Rummy.
@@ -120,12 +120,9 @@ class Stack:
             self.cards.insert(position, card)
             position = position + 1
 
-# BoardPlayer
-# self.hand = an array of cards in that player's hand.
-
 
 class BoardPlayer():
-    def __init__(self, connection: Connection):
+    def __init__(self, connection: 'lobby.Connection'):
         self.hand = Stack(0, False)
         self.connection = connection
 
@@ -140,15 +137,15 @@ class BoardPlayer():
 
 
 class Game:
-    def __init__(self, lobby: Lobby, settings: GameSettings):
-        self.lobby = lobby.code
+    def __init__(self, l: 'lobby.Lobby', settings: GameSettings):
+        self.lobby = l.code
         self.settings = settings
         games[self.lobby] = self
         # TODO: jokers are not currently supported
         self.deck = Stack(settings.deck_count, settings.enable_jokers)
         self.discard = Stack(0, False)
         self.players: list["BoardPlayer"] = [BoardPlayer(
-            connections[player]) for player in lobby.connections]
+            lobby.connections[player]) for player in l.connections]
         self.melds: list[Stack] = []
         self.turn_player: int = 0  # TODO: respect settings.first_turn
         self.turn_has_drawn: bool = False
@@ -209,5 +206,5 @@ class Game:
         self.turn_has_drawn = False
         self.notifyPlayersOfTurnState()
 
-    def assertCurrentTurn(self, connection: Connection):
+    def assertCurrentTurn(self, connection: 'lobby.Connection'):
         assert self.players[self.turn_player].connection is connection

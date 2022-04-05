@@ -3,6 +3,8 @@ from uuid import uuid4
 
 from flask_sock import Server
 
+import game
+from names import generateName
 from protocol import *
 
 
@@ -10,7 +12,7 @@ class Connection:
     def __init__(self, sock: Server):
         self.sock = sock
         self.id = uuid4().hex
-        self.name = "Player"
+        self.name = generateName()
         self.lobby = Lobby()
         connections[self.id] = self
         self.lobby.addPlayer(self)
@@ -22,15 +24,20 @@ class Connection:
             print(e)
             try:
                 self.lobby.removePlayer(self)
-            except: pass
+            except:
+                pass
             try:
                 self.sock.close()
-            except: pass
+            except:
+                pass
             try:
                 del connections[self.id]
-            except: pass
+            except:
+                pass
+
 
 connections: dict[str, Connection] = {}
+
 
 class Lobby:
     def __init__(self):
@@ -49,7 +56,8 @@ class Lobby:
             self.connections.remove(player.id)
             if len(self.connections) == 0:
                 lobbies.pop(self.code)
-        except: pass
+        except:
+            pass
 
     def informPlayersOfLobby(self):
         for player in map(lambda x: connections[x], self.connections):
@@ -65,7 +73,9 @@ class Lobby:
                 )
             ))
 
+
 lobbies: dict[str, Lobby] = {}
+
 
 def addConnection(sock: Server):
     try:
@@ -73,36 +83,43 @@ def addConnection(sock: Server):
         connections[connection.id] = connection
         try:
             while True:
-                data: Union[str, bytes, None] = sock.receive(60 * 30) # Time out the user after 30min of inactivity
+                # Time out the user after 30min of inactivity
+                data: Union[str, bytes, None] = sock.receive(60 * 30)
                 if data is None:
                     raise RuntimeError("Connection timed out")
                 if isinstance(data, bytes):
                     data = data.decode("utf-8")
                 action = parseAction(data)
                 try:
-                    handleAction(action, connection)
+                    game.handleAction(action, connection)
                 except Exception as e:
                     print(e)
-                    raise RuntimeError("Error handling action {}".format(action))
+                    raise RuntimeError(
+                        "Error handling action {}".format(action))
         except Exception as e:
             print(e)
             try:
                 connection.lobby.removePlayer(connection)
-            except: pass
+            except:
+                pass
             try:
                 removeConnection(connection.id)
-            except: pass
-    except: pass
+            except:
+                pass
+    except:
+        pass
     try:
         sock.close()
     except Exception as e:
         print(e)
+
 
 def removeConnection(id: str):
     try:
         connections[id].sock.close()
     finally:
         del connections[id]
+
 
 def parseAction(action: str) -> Action:
     o = json.loads(action)
@@ -111,5 +128,5 @@ def parseAction(action: str) -> Action:
     assert o["type"] in actionTypeMap
     return actionTypeMap[o["type"]].decodeObject(o)
 
+
 # import last so that Lobby and Connection easily available to game
-from game import handleAction
