@@ -35,18 +35,7 @@ function resetBoard(event) {
 		let card = document.createElement("div")
 		card.classList.add("card")
 		card.id = `card-${cardID}`
-		card.addEventListener("click", () => {
-			//@ts-ignore
-			if (state.type == "game" && state.board.players.find(player => player.id == state.board.current_player_id)?.hand.some(({ id }) => id == cardID)) {
-				if (state.ui.selectedCardIDs.has(cardID)) {
-					state.ui.selectedCardIDs.delete(cardID)
-					card.classList.remove("selected")
-				} else {
-					state.ui.selectedCardIDs.add(cardID)
-					card.classList.add("selected")
-				}
-			}
-		})
+		card.addEventListener("click", () => handleCardClick(cardID))
 		boardElement.appendChild(card)
 	}
 	for (let player of event.players) {
@@ -60,6 +49,34 @@ function resetBoard(event) {
 		boardElement.appendChild(playerSecondaryElement)
 	}
 	updateBoardState()
+}
+
+/**
+ * @param {string} cardID
+ */
+function handleCardClick(cardID) {
+	if (state.type != "game") return
+	if (state.board.turn?.player_id == state.board.current_player_id) {
+		if (state.board.turn?.state == "draw") {
+			if (state.board.deck[state.board.deck.length - 1]?.id == cardID || state.board.discard[state.board.discard.length - 1]?.id == cardID) {
+				sendAction({
+					type: "draw",
+					card_id: cardID
+				})
+			}
+		}
+	}
+	//@ts-ignore
+	if (state.board.players.find(player => player.id == state.board.current_player_id)?.hand.some(({ id }) => id == cardID)) {
+		if (state.ui.selectedCardIDs.has(cardID)) {
+			state.ui.selectedCardIDs.delete(cardID)
+			id("card-" + cardID).classList.remove("selected")
+		} else {
+			state.ui.selectedCardIDs.add(cardID)
+			id("card-" + cardID).classList.add("selected")
+		}
+		updateControlsState()
+	}
 }
 
 /**
@@ -189,11 +206,13 @@ function updateBoardState() {
 			}
 		}
 		updatePlayerAccessories(player, /**@type {any}*/(playerPosition))
+		updateControlsState()
 	}
 }
 
 function updateLobbyState() {
 	if (state.type !== "lobby") return
+	updateControlsState()
 	if (id("lobby").classList.contains("hidden")) id("lobby").classList.remove("hidden")
 	if (!id("board").classList.contains("hidden")) id("board").classList.add("hidden")
 	let lobby = state.lobby
@@ -307,6 +326,21 @@ function handleEvent(event) {
 			updateLobbyState()
 			break
 	}
+}
+
+function updateControlsState() {
+	let button = id("main-action-button")
+	if (state.type !== "game")
+		button.dataset.action = "none"
+	else if (state.board.turn?.player_id != state.board.current_player_id || state.board.turn?.state != "play")
+		button.dataset.action = "none"
+	else if (state.ui.selectedCardIDs.size == 1)
+		// TODO: use "lay" if the selected card can be laid down
+		button.dataset.action = "discard"
+	else if (state.ui.selectedCardIDs.size > 1)
+		button.dataset.action = "meld"
+	else
+		button.dataset.action = "none"
 }
 
 /** @type {GameEvent[]} */
