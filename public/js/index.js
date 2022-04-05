@@ -391,3 +391,5 @@ function sendAction(action) {
 	console.log(`Sending ${action.type} action`, action)
 	if (ws) ws.send(JSON.stringify(action))
 }
+
+window.sendAction = sendAction

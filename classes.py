@@ -1,4 +1,5 @@
 from random import shuffle
+from typing import Union
 from uuid import uuid4
 
 import funlib
@@ -136,6 +137,29 @@ class BoardPlayer():
         return ClientPlayer(self.connection.name, self.connection.id, [card.makeForClient(visibleCards) for card in self.hand.cards], True)
 
 
+class BoardAIPlayer():
+    def __init__(self, lobbyPlayer: 'lobby.AILobbyPlayer'):
+        self.hand = Stack(0, False)
+        self.profile = lobbyPlayer
+
+    def getDestinationHandPosition(self, card: ServerCard, settings: GameSettings):
+        for i in range(len(self.hand.cards)):
+            if card.isSortedBefore(self.hand.cards[i], settings):
+                return i
+        return len(self.hand.cards)
+
+    def makeForClient(self):
+        return ClientPlayer(self.profile.name, self.profile.id, [card.makeForClient(False) for card in self.hand.cards], False)
+
+    def takeTurn(self, game: 'Game'):
+        # TODO: AI
+        card = game.deck.top()
+        game.moveCardsToAIHand(
+            [card], game.deck, self, self.getDestinationHandPosition(card, game.settings))
+        game.moveCardsToDiscard([card], self.hand)
+        game.nextTurn()
+
+
 class Game:
     def __init__(self, l: 'lobby.Lobby', settings: GameSettings):
         self.lobby = l.code
@@ -146,6 +170,7 @@ class Game:
         self.discard = Stack(0, False)
         self.players: list["BoardPlayer"] = [BoardPlayer(
             lobby.connections[player]) for player in l.connections]
+        self.aiPlayers = [BoardAIPlayer(player) for player in l.aiPlayers]
         self.melds: list[Stack] = []
         self.turn_player: int = 0  # TODO: respect settings.first_turn
         self.turn_has_drawn: bool = False
@@ -168,6 +193,15 @@ class Game:
             ], MoveDestinationPlayer(player.connection.id, destPosition)))
         player.hand.insert(cards, destPosition)
 
+    def moveCardsToAIHand(self, cards: list[ServerCard], originalStack: Stack, player: BoardAIPlayer, destPosition: int):
+        originalStack.remove(cards)
+        destPosition = min(max(destPosition, 0), len(player.hand.cards))
+        for client in self.players:
+            client.connection.sendEvent(MoveEvent([
+                card.makeForClient(False) for card in cards
+            ], MoveDestinationPlayer(player.profile.id, destPosition)))
+        player.hand.insert(cards, destPosition)
+
     def moveCardsToMeld(self, cards: list[ServerCard], originalStack: Stack, meldNumber: int, destPosition: int):
         originalStack.remove(cards)
         meldNumber = min(max(meldNumber, 0), len(self.melds))
@@ -187,24 +221,38 @@ class Game:
                 card = self.deck.top()
                 self.moveCardsToHand(
                     [card], self.deck, player, player.getDestinationHandPosition(card, self.settings))
+            for player in self.aiPlayers:
+                card = self.deck.top()
+                self.moveCardsToAIHand(
+                    [card], self.deck, player, player.getDestinationHandPosition(card, self.settings))
 
     def notifyPlayersOfTurnState(self):
-        for client in self.players:
-            client.connection.sendEvent(TurnEvent(
-                self.players[self.turn_player].connection.id, "play" if self.turn_has_drawn else "draw"))
+        if (self.turn_player < len(self.players)):
+            for client in self.players:
+                client.connection.sendEvent(TurnEvent(
+                    self.players[self.turn_player].connection.id, "play" if self.turn_has_drawn else "draw"))
+        else:
+            for client in self.players:
+                client.connection.sendEvent(TurnEvent(
+                    self.aiPlayers[self.turn_player - len(self.players)].profile.id, "play" if self.turn_has_drawn else "draw"))
 
     def start(self):
         for client in self.players:
             client.connection.sendEvent(StartEvent([
                 player.makeForClient(client is player) for player in self.players
+            ] + [
+                player.makeForClient() for player in self.aiPlayers
             ], client.connection.id, [card.id for card in self.deck.cards], self.lobby))
         self.deal()
         self.notifyPlayersOfTurnState()
 
     def nextTurn(self):
-        self.turn_player = (self.turn_player + 1) % len(self.players)
+        self.turn_player = (self.turn_player +
+                            1) % (len(self.players) + len(self.aiPlayers))
         self.turn_has_drawn = False
         self.notifyPlayersOfTurnState()
+        if (self.turn_player >= len(self.players)):
+            self.aiPlayers[self.turn_player - len(self.players)].takeTurn(self)
 
     def assertCurrentTurn(self, connection: 'lobby.Connection'):
         assert self.players[self.turn_player].connection is connection

@@ -29,7 +29,10 @@ def handleAction(action: Action, connection: 'l.Connection'):
         # If removing a player, the server should verify that there is an AI player in the lobby to remove, and the game has not started.
         #  - action (Literal["add", "remove"]): The action to perform.
         assert game is None
-        raise NotImplementedError()
+        if action.action == "add":
+            connection.lobby.addAIPlayer()
+        elif action.action == "remove":
+            connection.lobby.removeAIPlayer()
 
     elif isinstance(action, JoinAction):
 
@@ -37,7 +40,7 @@ def handleAction(action: Action, connection: 'l.Connection'):
         # The server should verify that the game is not already running, and that thare are less than 4 players in the game.
         #  - code (str): The game code to join.
         assert game is None
-        if action.code in l.lobbies and not action.code in games and len(l.lobbies[action.code].connections) < 4:
+        if action.code in l.lobbies and not action.code in games and len(l.lobbies[action.code].connections) + len(l.lobbies[action.code].aiPlayers) < 4:
             l.lobbies[action.code].addPlayer(connection)
 
     elif isinstance(action, StartAction):
@@ -45,7 +48,7 @@ def handleAction(action: Action, connection: 'l.Connection'):
         # Starts the current game.
         # The server should verify that at least two players are in the game.
         assert game is None
-        assert len(lobby.connections) >= 2
+        assert len(lobby.connections) + len(lobby.aiPlayers) >= 2
         game = Game(lobby, GameSettings())
         game.start()
 

@@ -1,4 +1,5 @@
 import random
+from traceback import print_exc
 from uuid import uuid4
 
 from flask_sock import Server
@@ -20,8 +21,8 @@ class Connection:
     def sendEvent(self, event: Event):
         try:
             self.sock.send(event.encodeString())
-        except Exception as e:
-            print(e)
+        except Exception:
+            print_exc()
             try:
                 self.lobby.removePlayer(self)
             except:
@@ -39,9 +40,16 @@ class Connection:
 connections: dict[str, Connection] = {}
 
 
+class AILobbyPlayer:
+    def __init__(self):
+        self.name = generateName()
+        self.id = uuid4().hex
+
+
 class Lobby:
     def __init__(self):
         self.connections: list[str] = []
+        self.aiPlayers: list[AILobbyPlayer] = []
         self.code = str(random.randint(0, 999999)).rjust(6, "0")
         lobbies[self.code] = self
 
@@ -69,9 +77,26 @@ class Lobby:
                         id=p.id,
                         human=True,
                         name=p.name
-                    ) for p in map(lambda x: connections[x], self.connections)]
+                    ) for p in map(lambda x: connections[x], self.connections)] +
+                    [LobbyPlayer(
+                        id=p.id,
+                        human=False,
+                        name=p.name
+                    ) for p in self.aiPlayers]
                 )
             ))
+
+    def addAIPlayer(self):
+        if len(self.connections) + len(self.aiPlayers) >= 4:
+            return
+        self.aiPlayers.append(AILobbyPlayer())
+        self.informPlayersOfLobby()
+
+    def removeAIPlayer(self):
+        if len(self.aiPlayers) == 0:
+            return
+        self.aiPlayers.pop()
+        self.informPlayersOfLobby()
 
 
 lobbies: dict[str, Lobby] = {}
@@ -92,12 +117,12 @@ def addConnection(sock: Server):
                 action = parseAction(data)
                 try:
                     game.handleAction(action, connection)
-                except Exception as e:
-                    print(e)
+                except Exception:
+                    print_exc()
                     raise RuntimeError(
                         "Error handling action {}".format(action))
         except Exception as e:
-            print(e)
+            print_exc()
             try:
                 connection.lobby.removePlayer(connection)
             except:
