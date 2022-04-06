@@ -58,9 +58,28 @@ def handleAction(action: Action, connection: 'l.Connection'):
         # The server should verify that the card ID is at the top of the discard pile or the deck.
         #  - card_id (str): The ID of the card to draw. This can be the top card of the deck or the top card of the discard pile.
         assert game is not None
+        player: Optional[BoardPlayer] = None
+        for p in game.players:
+            if p.connection is connection:
+                player = p
+                break
+        assert player is not None
         game.assertCurrentTurn(connection)
         assert game.turn_has_drawn is False
-        raise NotImplementedError()
+        deckCard = game.deck.top()
+        discardCard = game.discard.top()
+        if deckCard is not None and deckCard.id == action.card_id:
+            game.moveCardsToHand([deckCard], game.deck, player, player.getDestinationHandPosition(
+                deckCard, game.settings))
+            game.turn_has_drawn = True
+            game.notifyPlayersOfTurnState()
+        elif discardCard is not None and discardCard.id == action.card_id:
+            game.moveCardsToHand([discardCard], game.discard, player, player.getDestinationHandPosition(
+                discardCard, game.settings))
+            game.turn_has_drawn = True
+            game.notifyPlayersOfTurnState()
+        else:
+            raise RuntimeError("Invalid card ID")
 
     elif isinstance(action, MeldAction):
 
@@ -68,6 +87,12 @@ def handleAction(action: Action, connection: 'l.Connection'):
         # The server should verify that (A) all cards are in the player's hand, and (B) that the cards form a valid meld.
         #  - card_ids (list[str]): A list of card IDs to lay down.
         assert game is not None
+        player: Optional[BoardPlayer] = None
+        for p in game.players:
+            if p.connection is connection:
+                player = p
+                break
+        assert player is not None
         game.assertCurrentTurn(connection)
         assert game.turn_has_drawn is True
         raise NotImplementedError()
@@ -79,6 +104,12 @@ def handleAction(action: Action, connection: 'l.Connection'):
         #  - card_id (str): The ID of the card to lay.
         #  - meld_number (int): The index of the meld to add the card to.
         assert game is not None
+        player: Optional[BoardPlayer] = None
+        for p in game.players:
+            if p.connection is connection:
+                player = p
+                break
+        assert player is not None
         game.assertCurrentTurn(connection)
         assert game.turn_has_drawn is True
         raise NotImplementedError()
@@ -89,6 +120,12 @@ def handleAction(action: Action, connection: 'l.Connection'):
         # The server should verify that the card is in the player's hand.
         #  - card_id (str): The ID of the card to discard.
         assert game is not None
+        player: Optional[BoardPlayer] = None
+        for p in game.players:
+            if p.connection is connection:
+                player = p
+                break
+        assert player is not None
         game.assertCurrentTurn(connection)
         assert game.turn_has_drawn is True
         raise NotImplementedError()

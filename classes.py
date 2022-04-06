@@ -105,7 +105,7 @@ class Stack:
         self.cards = funlib.newDeck(num_decks, jokers)
 
     def top(self):
-        return self.cards[-1]
+        return self.cards[-1] if len(self.cards) > 0 else None
 
     def reshuffle(self):
         shuffle(self.cards)
@@ -255,4 +255,5 @@ class Game:
             self.aiPlayers[self.turn_player - len(self.players)].takeTurn(self)
 
     def assertCurrentTurn(self, connection: 'lobby.Connection'):
-        assert self.players[self.turn_player].connection is connection
+        assert self.turn_player < len(
+            self.players) and self.players[self.turn_player].connection is connection
