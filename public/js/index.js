@@ -59,6 +59,8 @@ function handleCardClick(cardID) {
 	if (state.board.turn?.player_id == state.board.current_player_id) {
 		if (state.board.turn?.state == "draw") {
 			if (state.board.deck[state.board.deck.length - 1]?.id == cardID || state.board.discard[state.board.discard.length - 1]?.id == cardID) {
+				if (state.board.discard[state.board.discard.length - 1]?.id == cardID)
+					state.ui.nonDiscardableCard = cardID
 				sendAction({
 					type: "draw",
 					card_id: cardID
@@ -360,7 +362,10 @@ function updateControlsState() {
 		button.dataset.action = state.ui.primaryAction = "none"
 	else if (state.ui.selectedCardIDs.size == 1)
 		// TODO: use "lay" if the selected card can be laid down
-		button.dataset.action = state.ui.primaryAction = "discard"
+		if ([...state.ui.selectedCardIDs][0] != state.ui.nonDiscardableCard)
+			button.dataset.action = state.ui.primaryAction = "discard"
+		else
+			button.dataset.action = state.ui.primaryAction = "none"
 	else if (state.ui.selectedCardIDs.size > 1)
 		button.dataset.action = state.ui.primaryAction = "meld"
 	else
