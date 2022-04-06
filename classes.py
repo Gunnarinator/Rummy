@@ -228,6 +228,9 @@ class Game:
                 assert card is not None
                 self.moveCardsToAIHand(
                     [card], self.deck, player, player.getDestinationHandPosition(card, self.settings))
+        discard = self.deck.top()
+        assert discard is not None
+        self.moveCardsToDiscard([discard], self.deck)
 
     def notifyPlayersOfTurnState(self):
         if (self.turn_player < len(self.players)):
