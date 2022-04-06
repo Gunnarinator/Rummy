@@ -385,14 +385,19 @@ let eventQueueTimer = null
 /** @type {Partial<Record<GameEvent["type"], number>>}*/
 const eventDelays = {
 	start: 1000,
-	move: 200
+	move: 600
 }
 function handleNextEvent() {
 	eventQueueTimer = null
 	if (eventQueue.length === 0) return
 	let event = eventQueue.shift()
 	handleEvent(event)
-	eventQueueTimer = setTimeout(handleNextEvent, eventDelays[event.type] || 0)
+	if (event.type == "move" && state.type == "game" && !state.board.turn) {
+		// use a shorter delay for dealing
+		eventQueueTimer = setTimeout(handleNextEvent, 600 / state.board.players.length)
+	} else {
+		eventQueueTimer = setTimeout(handleNextEvent, eventDelays[event.type] || 0)
+	}
 }
 
 /**
