@@ -252,7 +252,39 @@ class Game:
         self.deal()
         self.notifyPlayersOfTurnState()
 
+    def redeck(self):
+        if self.settings.deck_exhaust == "end_round" or len(self.discard.cards) == 0:
+            self.end()
+            return False
+        elif self.settings.deck_exhaust == "flip_discard":
+            self.deck.cards = self.discard.cards
+            self.deck.cards.reverse()
+            self.discard.cards = []
+            for card in self.deck.cards:
+                card.id = uuid4().hex
+            for client in self.players:
+                client.connection.sendEvent(RedeckEvent(
+                    [card.id for card in self.deck.cards]))
+            return True
+        elif self.settings.deck_exhaust == "shuffle_discard":
+            self.deck.cards = self.discard.cards
+            shuffle(self.deck.cards)
+            self.discard.cards = []
+            for card in self.deck.cards:
+                card.id = uuid4().hex
+            for client in self.players:
+                client.connection.sendEvent(RedeckEvent(
+                    [card.id for card in self.deck.cards]))
+            return True
+
+    def end(self):
+        # TODO: end the round and delete games[lobby code]
+        pass
+
     def nextTurn(self):
+        if len(self.deck.cards) == 0:
+            if not self.redeck():
+                return
         self.turn_player = (self.turn_player +
                             1) % (len(self.players) + len(self.aiPlayers))
         self.turn_has_drawn = False
