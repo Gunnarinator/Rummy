@@ -108,8 +108,7 @@ def addConnection(sock: Server):
         connections[connection.id] = connection
         try:
             while True:
-                # Time out the user after 30min of inactivity
-                data: Union[str, bytes, None] = sock.receive(60 * 30)
+                data: Union[str, bytes, None] = sock.receive()
                 if data is None:
                     raise RuntimeError("Connection timed out")
                 if isinstance(data, bytes):
