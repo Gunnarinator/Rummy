@@ -6,6 +6,7 @@ declare interface GameUIState {
      * The cards in the player's hand that are currently selected to perform an action.
      */
     selectedCardIDs: Set<string>
+    primaryAction?: "discard" | "meld" | "lay" | "none"
 }
 /**
  * A specifier for the position of a particular card. This is translated into CSS classes and variables.

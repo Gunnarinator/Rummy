@@ -79,6 +79,30 @@ function handleCardClick(cardID) {
 	}
 }
 
+function performPrimaryAction() {
+	if (state.type != "game" || !state.ui.primaryAction) return
+	switch (state.ui.primaryAction) {
+		case "discard":
+			if (state.ui.selectedCardIDs.size != 1) return
+			let cardID = [...state.ui.selectedCardIDs][0]
+			sendAction({
+				type: "discard",
+				card_id: cardID
+			})
+			break
+		case "meld":
+			if (state.ui.selectedCardIDs.size == 0) return
+			let cardIDs = [...state.ui.selectedCardIDs]
+			sendAction({
+				type: "meld",
+				card_ids: cardIDs
+			})
+			break
+		case "lay":
+			break
+	}
+}
+
 /**
  * @param {Card} card
  * @param {UICardPosition} position
@@ -333,14 +357,14 @@ function updateControlsState() {
 	if (state.type !== "game")
 		button.dataset.action = "none"
 	else if (state.board.turn?.player_id != state.board.current_player_id || state.board.turn?.state != "play")
-		button.dataset.action = "none"
+		button.dataset.action = state.ui.primaryAction = "none"
 	else if (state.ui.selectedCardIDs.size == 1)
 		// TODO: use "lay" if the selected card can be laid down
-		button.dataset.action = "discard"
+		button.dataset.action = state.ui.primaryAction = "discard"
 	else if (state.ui.selectedCardIDs.size > 1)
-		button.dataset.action = "meld"
+		button.dataset.action = state.ui.primaryAction = "meld"
 	else
-		button.dataset.action = "none"
+		button.dataset.action = state.ui.primaryAction = "none"
 }
 
 /** @type {GameEvent[]} */
@@ -406,6 +430,7 @@ function init() {
 			})
 		}
 	})
+	document.querySelector("#main-action-button").addEventListener("click", performPrimaryAction)
 	ws = new WebSocket(`${location.protocol.replace("http", "ws")}//${location.host}/stream`)
 	ws.onmessage = d => queueEvent(JSON.parse(d.data))
 	ws.onclose = () => ws = null
