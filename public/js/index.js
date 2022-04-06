@@ -57,7 +57,7 @@ function resetBoard(event) {
 function handleCardClick(cardID) {
 	if (state.type != "game") return
 	if (state.board.turn?.player_id == state.board.current_player_id) {
-		if (state.board.turn?.state == "draw") {
+		if (state.board.turn.state == "draw") {
 			if (state.board.deck[state.board.deck.length - 1]?.id == cardID || state.board.discard[state.board.discard.length - 1]?.id == cardID) {
 				if (state.board.discard[state.board.discard.length - 1]?.id == cardID)
 					state.ui.nonDiscardableCard = cardID
@@ -68,18 +68,19 @@ function handleCardClick(cardID) {
 					card_id: cardID
 				})
 			}
-		}
-	}
-	//@ts-ignore
-	if (state.board.players.find(player => player.id == state.board.current_player_id)?.hand.some(({ id }) => id == cardID)) {
-		if (state.ui.selectedCardIDs.has(cardID)) {
-			state.ui.selectedCardIDs.delete(cardID)
-			id("card-" + cardID).classList.remove("selected")
 		} else {
-			state.ui.selectedCardIDs.add(cardID)
-			id("card-" + cardID).classList.add("selected")
+			//@ts-ignore
+			if (state.board.players.find(player => player.id == state.board.current_player_id)?.hand.some(({ id }) => id == cardID)) {
+				if (state.ui.selectedCardIDs.has(cardID)) {
+					state.ui.selectedCardIDs.delete(cardID)
+					id("card-" + cardID).classList.remove("selected")
+				} else {
+					state.ui.selectedCardIDs.add(cardID)
+					id("card-" + cardID).classList.add("selected")
+				}
+				updateControlsState()
+			}
 		}
-		updateControlsState()
 	}
 }
 
@@ -123,7 +124,8 @@ function updateCard(card, position, turnState) {
 	} : {}
 	switch (position.type) {
 		case "own-hand":
-			classString += " face-up spread hand hover-up"
+			classString += " face-up spread hand"
+			if (turnState == "play") classString += " hover-up"
 			if (position.selected) classString += " selected"
 			attributeMap.pin = "bottom"
 			break
@@ -228,7 +230,7 @@ function updateBoardState() {
 		}
 		if (player.id === state.board.current_player_id) {
 			for (let card of state.ui.selectedCardIDs) {
-				if (!player.hand.some(({ id }) => id == card)) {
+				if (turnState != "play" || !player.hand.some(({ id }) => id == card)) {
 					state.ui.selectedCardIDs.delete(card)
 				}
 			}
