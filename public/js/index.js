@@ -61,6 +61,8 @@ function handleCardClick(cardID) {
 			if (state.board.deck[state.board.deck.length - 1]?.id == cardID || state.board.discard[state.board.discard.length - 1]?.id == cardID) {
 				if (state.board.discard[state.board.discard.length - 1]?.id == cardID)
 					state.ui.nonDiscardableCard = cardID
+				else
+					state.ui.nonDiscardableCard = null
 				sendAction({
 					type: "draw",
 					card_id: cardID
