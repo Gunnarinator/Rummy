@@ -35,7 +35,8 @@ function resetBoard(event) {
 		let card = document.createElement("div")
 		card.classList.add("card")
 		card.id = `card-${cardID}`
-		card.addEventListener("click", () => handleCardClick(cardID))
+		card.dataset.id = cardID
+		card.addEventListener("click", function () { handleCardClick(this.dataset.id) })
 		boardElement.appendChild(card)
 	}
 	for (let player of event.players) {
@@ -355,6 +356,18 @@ function handleEvent(event) {
 			state.lobby = event.lobby
 			updateLobbyState()
 			break
+		case "redeck":
+			if (state.type !== "game") return
+			if (event.new_card_ids.length != state.board.discard.length) throw Error("Invalid number of cards")
+			state.board.deck = event.new_card_ids.map(id => ({ id }))
+			for (let oldCard of state.board.discard) {
+				let newID = event.new_card_ids.shift()
+				let cardElement = id(`card-${oldCard.id}`)
+				cardElement.id = `card-${newID}`
+				cardElement.dataset.id = newID
+			}
+			state.board.discard = []
+			updateBoardState()
 	}
 }
 
@@ -385,6 +398,7 @@ let eventQueueTimer = null
 /** @type {Partial<Record<GameEvent["type"], number>>}*/
 const eventDelays = {
 	start: 1000,
+	redeck: 600,
 	move: 600
 }
 function handleNextEvent() {
