@@ -77,6 +77,7 @@ def handleAction(action: Action, connection: 'l.Connection'):
             game.moveCardsToHand([discardCard], game.discard, player, player.getDestinationHandPosition(
                 discardCard, game.settings))
             game.turn_has_drawn = True
+            game.non_discardable_card = discardCard
             game.notifyPlayersOfTurnState()
         else:
             raise RuntimeError("Invalid card ID")
@@ -128,7 +129,15 @@ def handleAction(action: Action, connection: 'l.Connection'):
         assert player is not None
         game.assertCurrentTurn(connection)
         assert game.turn_has_drawn is True
-        raise NotImplementedError()
+        card: Optional[ServerCard] = None
+        for c in player.hand.cards:
+            if c.id == action.card_id:
+                card = c
+                break
+        assert card is not None
+        assert card is not game.non_discardable_card
+        game.moveCardsToDiscard([card], player.hand)
+        game.nextTurn()
 
     else:
         raise RuntimeError("Unknown action type")

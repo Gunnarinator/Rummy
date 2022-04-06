@@ -174,6 +174,7 @@ class Game:
         self.melds: list[Stack] = []
         self.turn_player: int = 0  # TODO: respect settings.first_turn
         self.turn_has_drawn: bool = False
+        self.non_discardable_card: Optional[ServerCard] = None
 
     def moveCardsToDiscard(self, cards: list[ServerCard], originalStack: Stack):
         originalStack.remove(cards)
@@ -219,10 +220,12 @@ class Game:
         for i in range(self.settings.hand_size):
             for player in self.players:
                 card = self.deck.top()
+                assert card is not None
                 self.moveCardsToHand(
                     [card], self.deck, player, player.getDestinationHandPosition(card, self.settings))
             for player in self.aiPlayers:
                 card = self.deck.top()
+                assert card is not None
                 self.moveCardsToAIHand(
                     [card], self.deck, player, player.getDestinationHandPosition(card, self.settings))
 
@@ -250,6 +253,7 @@ class Game:
         self.turn_player = (self.turn_player +
                             1) % (len(self.players) + len(self.aiPlayers))
         self.turn_has_drawn = False
+        self.non_discardable_card = None
         self.notifyPlayersOfTurnState()
         if (self.turn_player >= len(self.players)):
             self.aiPlayers[self.turn_player - len(self.players)].takeTurn(self)
