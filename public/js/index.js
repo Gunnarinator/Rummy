@@ -126,12 +126,13 @@ function updateCard(card, position, turnState) {
 	switch (position.type) {
 		case "own-hand":
 			classString += " face-up spread hand"
-			if (turnState == "play") classString += " hover-up"
+			if (turnState == "play") classString += " turn hover-up"
 			if (position.selected) classString += " selected"
 			attributeMap.pin = "bottom"
 			break
 		case "opponent-hand":
 			classString += " face-down spread hand"
+			if (turnState) classString += " turn"
 			attributeMap.pin = position.position
 			break
 		case "deck":
@@ -227,7 +228,7 @@ function updateBoardState() {
 				position: /**@type {any}*/(playerPosition),
 				index: j,
 				stack_size: player.hand.length
-			}, turnState)
+			}, state.board.turn?.player_id == player.id ? state.board.turn.state : null)
 		}
 		if (player.id === state.board.current_player_id) {
 			for (let card of state.ui.selectedCardIDs) {

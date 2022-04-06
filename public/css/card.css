@@ -124,22 +124,34 @@
 	--position-offset-x: var(--stack-offset);
 	--position-offset-y: calc(var(--edge-top) - var(--card-height) / 2);
 }
+.card.hand[data-pin="top"].turn {
+	--position-offset-y: var(--edge-top);
+}
 
 .card.hand[data-pin="right"] {
 	--position-offset-x: calc(var(--edge-right-sideways) + var(--card-height) / 2);
 	--position-offset-y: var(--stack-offset);
 	--rotation-offset: -90deg;
 }
+.card.hand[data-pin="right"].turn {
+	--position-offset-x: var(--edge-right-sideways);
+}
 
 .card.hand[data-pin="bottom"] {
 	--position-offset-x: var(--stack-offset);
 	--position-offset-y: calc(var(--edge-bottom) + var(--card-height) / 2);
+}
+.card.hand[data-pin="bottom"].turn {
+	--position-offset-y: var(--edge-bottom);
 }
 
 .card.hand[data-pin="left"] {
 	--position-offset-x: calc(var(--edge-left-sideways) - var(--card-height) / 2);
 	--position-offset-y: calc(-1 * var(--stack-offset));
 	--rotation-offset: 90deg;
+}
+.card.hand[data-pin="left"].turn {
+	--position-offset-x: var(--edge-left-sideways);
 }
 
 .accessory-primary[data-pin="top"] {
@@ -227,15 +239,12 @@
 }
 
 .card.hover-up:not(.selected):hover {
-	--hover-offset: calc(-10px - var(--card-height) / 2);
+	--hover-offset: -10px;
 }
 
 .card.hover-down {
 	box-shadow: 0 4px 16px 4px rgba(255, 170, 0, 0.5);
 	transition: transform var(--animation-duration) ease-in-out, box-shadow 0.3s ease-in-out 0.5s;
-}
-.card.hover-up {
-	--hover-offset: calc(var(--card-height) / -2);
 }
 
 .card.hover-down:not(.selected):hover {
@@ -243,7 +252,7 @@
 }
 
 .card.selected.hover-up {
-	--hover-offset: calc(-40px - var(--card-height) / 2);
+	--hover-offset: -40px;
 }
 
 .card.selected.hover-down {
