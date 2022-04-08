@@ -10,7 +10,12 @@ def handleAction(action: Action, connection: 'l.Connection'):
     # If the game hasn't started yet, this will be None
     game = games.get(lobby.code, None)
 
-    if isinstance(action, NameAction):
+    if isinstance(action, PongAction):
+
+        # A pong recieved from the client. Indicates that the connection is still active.
+        pass
+
+    elif isinstance(action, NameAction):
 
         # Sets the name of the current player.
         # The server should verify that the name is valid (not too long, not already in use, must contain a letter or number).

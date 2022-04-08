@@ -19,21 +19,16 @@ class Connection:
         self.lobby.addPlayer(self)
 
     def sendEvent(self, event: Event):
+        if not self.id in connections:
+            return
         try:
             self.sock.send(event.encodeString())
         except Exception:
             print_exc()
+            removeConnection(self.id)
             try:
                 self.lobby.removePlayer(self)
-            except:
-                pass
-            try:
-                self.sock.close()
-            except:
-                pass
-            try:
-                del connections[self.id]
-            except:
+            except Exception:
                 pass
 
 
@@ -61,9 +56,14 @@ class Lobby:
 
     def removePlayer(self, player: Connection):
         try:
+            g = game.games.get(player.lobby.code)
+            if g is not None:
+                g.removePlayer(player.id)
             self.connections.remove(player.id)
             if len(self.connections) == 0:
                 lobbies.pop(self.code)
+            if g is None:
+                self.informPlayersOfLobby()
         except:
             pass
 
@@ -108,9 +108,12 @@ def addConnection(sock: Server):
         connections[connection.id] = connection
         try:
             while True:
-                data: Union[str, bytes, None] = sock.receive()
+                data: Union[str, bytes, None] = sock.receive(10)
                 if data is None:
-                    raise RuntimeError("Connection timed out")
+                    connection.sendEvent(PingEvent())
+                    data: Union[str, bytes, None] = sock.receive(10)
+                    if data is None:
+                        raise RuntimeError("Connection timed out")
                 if isinstance(data, bytes):
                     data = data.decode("utf-8")
                 action = parseAction(data)
@@ -122,13 +125,10 @@ def addConnection(sock: Server):
                         "Error handling action {}".format(action))
         except Exception as e:
             print_exc()
+            removeConnection(connection.id)
             try:
                 connection.lobby.removePlayer(connection)
-            except:
-                pass
-            try:
-                removeConnection(connection.id)
-            except:
+            except Exception:
                 pass
     except:
         pass
@@ -141,8 +141,12 @@ def addConnection(sock: Server):
 def removeConnection(id: str):
     try:
         connections[id].sock.close()
-    finally:
+    except Exception:
+        pass
+    try:
         del connections[id]
+    except Exception:
+        pass
 
 
 def parseAction(action: str) -> Action:

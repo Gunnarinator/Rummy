@@ -335,6 +335,9 @@ function moveCard(card, destination) {
 function handleEvent(event) {
 	console.log(`Incoming ${event.type} event`, event)
 	switch (event.type) {
+		case "ping":
+			sendAction({ type: "pong" })
+			break
 		case "move":
 			for (let card of event.cards.reverse()) {
 				moveCard(card, event.destination)

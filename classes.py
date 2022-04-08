@@ -1,4 +1,5 @@
 from random import shuffle
+from secrets import choice
 from typing import Union
 from uuid import uuid4
 
@@ -107,6 +108,10 @@ class Stack:
     def top(self):
         return self.cards[-1] if len(self.cards) > 0 else None
 
+    def assertedTop(self):
+        assert len(self.cards) > 0
+        return self.cards[-1]
+
     def reshuffle(self):
         shuffle(self.cards)
         for i in range(len(self.cards)):
@@ -136,6 +141,23 @@ class BoardPlayer():
     def makeForClient(self, visibleCards: bool):
         return ClientPlayer(self.connection.name, self.connection.id, [card.makeForClient(visibleCards) for card in self.hand.cards], True)
 
+    def skipTurn(self, game: 'Game'):
+        if game.turn_has_drawn:
+            cards = self.hand.cards.copy()
+            if game.non_discardable_card is not None:
+                try:
+                    cards.remove(game.non_discardable_card)
+                except Exception:
+                    pass
+            game.moveCardsToDiscard([choice(cards)], self.hand)
+            game.nextTurn()
+        else:
+            card = game.deck.assertedTop()
+            game.moveCardsToHand(
+                [card], game.deck, self, self.getDestinationHandPosition(card, game.settings))
+            game.moveCardsToDiscard([choice(self.hand.cards)], self.hand)
+            game.nextTurn()
+
 
 class BoardAIPlayer():
     def __init__(self, lobbyPlayer: 'lobby.AILobbyPlayer'):
@@ -153,7 +175,7 @@ class BoardAIPlayer():
 
     def takeTurn(self, game: 'Game'):
         # TODO: AI
-        card = game.deck.top()
+        card = game.deck.assertedTop()
         game.moveCardsToAIHand(
             [card], game.deck, self, self.getDestinationHandPosition(card, game.settings))
         game.moveCardsToDiscard([card], self.hand)
@@ -234,64 +256,123 @@ class Game:
 
     def notifyPlayersOfTurnState(self):
         if (self.turn_player < len(self.players)):
+            # it's a human player's turn
             for client in self.players:
                 client.connection.sendEvent(TurnEvent(
                     self.players[self.turn_player].connection.id, "play" if self.turn_has_drawn else "draw"))
         else:
+            # it's an AI player's turn
             for client in self.players:
                 client.connection.sendEvent(TurnEvent(
                     self.aiPlayers[self.turn_player - len(self.players)].profile.id, "play" if self.turn_has_drawn else "draw"))
 
     def start(self):
         for client in self.players:
+            # send a start event notifying all players that the game is starting
             client.connection.sendEvent(StartEvent([
                 player.makeForClient(client is player) for player in self.players
             ] + [
                 player.makeForClient() for player in self.aiPlayers
             ], client.connection.id, [card.id for card in self.deck.cards], self.lobby))
+
+        # deal out the cards
         self.deal()
+        # kick off the first turn
         self.notifyPlayersOfTurnState()
 
     def redeck(self):
         if self.settings.deck_exhaust == "end_round" or len(self.discard.cards) == 0:
             self.end()
+            # returning False here is how the caller (nextTurn()) knows that the game is over
             return False
         elif self.settings.deck_exhaust == "flip_discard":
+
+            # take the discard pile, reverse it ("flipping it"), and set it as the new deck
             self.deck.cards = self.discard.cards
             self.deck.cards.reverse()
             self.discard.cards = []
+
+            # reassign new IDs to the cards in the deck, to obscure the order of the cards
             for card in self.deck.cards:
                 card.id = uuid4().hex
+
+            # send the new card IDs to the client
             for client in self.players:
                 client.connection.sendEvent(RedeckEvent(
                     [card.id for card in self.deck.cards]))
             return True
         elif self.settings.deck_exhaust == "shuffle_discard":
+
+            # take the discard pile, shuffle it, and set it as the new deck
             self.deck.cards = self.discard.cards
             shuffle(self.deck.cards)
             self.discard.cards = []
+
+            # reassign new IDs to the cards in the deck, to obscure the order of the cards
             for card in self.deck.cards:
                 card.id = uuid4().hex
+
+            # send the new card IDs to the client
             for client in self.players:
                 client.connection.sendEvent(RedeckEvent(
                     [card.id for card in self.deck.cards]))
             return True
 
     def end(self):
-        # TODO: end the round and delete games[lobby code]
-        pass
+        # TODO: calculate hand scores and send an EndEvent to each player
+
+        # deleting the games entry stops player actions from being processed as game actions
+        del games[self.lobby]
+
+        # sending a lobby event updates clients on what players are still in the lobby for the next round
+        if self.lobby in lobby.lobbies:
+            lobby.lobbies[self.lobby].informPlayersOfLobby()
 
     def nextTurn(self):
+
+        # count how many human players are still connected
+        connectedPlayers = 0
+        for player in self.players:
+            if player.connection.id in lobby.connections:
+                connectedPlayers += 1
+
+        # if there are no human players left, or if there are less than two active (connected or AI) players, end the round
+        if connectedPlayers == 0 or connectedPlayers + len(self.aiPlayers) < 2:
+            self.end()
+            return
+
+        # if the deck is exhausted, flip or resuffle the deck according to the game settings
         if len(self.deck.cards) == 0:
             if not self.redeck():
                 return
+
+        # increment the turn counter, wrapping around at the end (once we've gone through all AI and human players)
         self.turn_player = (self.turn_player +
                             1) % (len(self.players) + len(self.aiPlayers))
+
+        # set game state to the beginning of a turn
         self.turn_has_drawn = False
         self.non_discardable_card = None
+
+        # send a message to all clients notifying them of the current turn state
         self.notifyPlayersOfTurnState()
-        if (self.turn_player >= len(self.players)):
+
+        # turns start with players, then AI, so low self.turn_player indicates a player turn
+        if (self.turn_player < len(self.players)):
+            # a human player needs to take a turn
+            if not self.players[self.turn_player].connection.id in lobby.connections:
+                # skip this player if they have disconnected
+                self.players[self.turn_player].skipTurn(self)
+        else:
+            # an AI player needs to take a turn
             self.aiPlayers[self.turn_player - len(self.players)].takeTurn(self)
+
+    def removePlayer(self, playerID: str):
+        # the player is still in the game, but no longer in the lobby (disconnected)
+        # if they were currently playing a turn, skip to the next player
+        if (self.turn_player < len(self.players)):
+            if (self.players[self.turn_player].connection.id == playerID):
+                self.players[self.turn_player].skipTurn(self)
 
     def assertCurrentTurn(self, connection: 'lobby.Connection'):
         assert self.turn_player < len(

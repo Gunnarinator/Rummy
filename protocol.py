@@ -204,6 +204,20 @@ class ClientBoard(Encodable):
         }
 
 
+class PingEvent(Encodable):
+    """
+    A ping recieved from the server. Client should immediately respond with a pong action.
+    """
+
+    def __init__(self):
+        """
+        A ping recieved from the server. Client should immediately respond with a pong action.
+        """
+
+    def encodeObject(self) -> JSONSafe:
+        return {"type": "ping"}
+
+
 class LobbyEvent(Encodable):
     """
     A message received from the server that updates the state of the lobby.
@@ -427,11 +441,12 @@ class EndEvent(Encodable):
         }
 
 
-Event = Union[LobbyEvent, StartEvent,
+Event = Union[PingEvent, LobbyEvent, StartEvent,
               TurnEvent, MoveEvent, RedeckEvent, EndEvent]
 """
 A message recieved from the server.
 
+`"ping"`: A ping recieved from the server. The client should respond immediately with a pong action.
 `"lobby"`: Update the state of the lobby.
 `"start"`: Resets the game to a default state where all players have empty hands, there is no meld, and the deck is shuffled.
 `"turn"`: Update the current turn state of the game.
@@ -439,6 +454,21 @@ A message recieved from the server.
 `"redeck"`: Indicates that the deck has been replenished from the discard pile.
 `"end"`: Indicates that the game has ended. The values of the remaining hands are tallied for scorekeeping.
 """
+
+
+class PongAction(Decodable):
+    """
+    A pong recieved from the client. Indicates that the connection is still active.
+    """
+
+    def __init__(self):
+        """
+        A pong recieved from the client. Indicates that the connection is still active.
+        """
+
+    @classmethod
+    def decodeObject(cls, data: JSONSafe) -> Self:
+        return PongAction()
 
 
 class NameAction(Decodable):
@@ -655,13 +685,14 @@ class DiscardAction(Decodable):
         return DiscardAction(data["card_id"])
 
 
-Action = Union[NameAction, AIAction, JoinAction, StartAction,
+Action = Union[PongAction, NameAction, AIAction, JoinAction, StartAction,
                DrawAction, MeldAction, LayAction, DiscardAction]
 """
 A message sent to the server. Indicates an action that the client wishes to perform.
 
 The client does not assume any side-effects of these actions. The server must send events back to the client to indicate the result of the action.
 
+`"pong"`: A pong recieved from the client. Indicates that the connection is still active.
 `"name"`: Sets the name of the current player.
 `"ai"`: Add or remove an AI player.
 `"join"`: Joins a game.
@@ -675,6 +706,7 @@ The server should verify the legality of every action taken by the client, inclu
 """
 
 actionTypeMap: dict[str, Type[Action]] = {
+    "pong": PongAction,
     "name": NameAction,
     "ai": AIAction,
     "join": JoinAction,

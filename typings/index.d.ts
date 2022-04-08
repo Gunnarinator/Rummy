@@ -115,6 +115,7 @@ declare interface Board {
 /**
  * A message recieved from the server.
  *
+ * `"ping"`: A ping recieved from the server. Client should immediately respond with a pong action.
  * `"lobby"`: Update the state of the lobby.
  * `"start"`: Resets the game to a default state where all players have empty hands, there is no meld, and the deck is shuffled.
  * `"turn"`: Update the current turn state of the game.
@@ -122,8 +123,14 @@ declare interface Board {
  * `"redeck"`: Indicates that the deck has been replenished from the discard pile.
  * `"end"`: Indicates that the game has ended. The values of the remaining hands are tallied for scorekeeping.
  */
-declare type GameEvent = LobbyEvent | StartEvent | TurnEvent | MoveEvent | RedeckEvent | EndEvent
+declare type GameEvent = PingEvent | LobbyEvent | StartEvent | TurnEvent | MoveEvent | RedeckEvent | EndEvent
 
+/**
+ * A ping recieved from the server. Client should immediately respond with a pong action.
+ */
+declare interface PingEvent {
+    type: "ping"
+}
 /**
  * A message received from the server that updates the state of the lobby.
  */
@@ -209,6 +216,7 @@ declare interface EndEvent {
  *
  * The client does not assume any side-effects of these actions. The server must send events back to the client to indicate the result of the action.
  *
+ * `"pong"`: A pong recieved from the client. Indicates that the connection is still active.
  * `"name"`: Sets the name of the current player.
  * `"ai"`: Add or remove an AI player.
  * `"join"`: Joins a game.
@@ -220,7 +228,14 @@ declare interface EndEvent {
  *
  * The server should verify the legality of every action taken by the client, including whether it is the player's turn, and that the player's turn state is appropriate.
  */
-declare type Action = NameAction | AIAction | JoinAction | StartAction | DrawAction | MeldAction | LayAction | DiscardAction
+declare type Action = PongAction | NameAction | AIAction | JoinAction | StartAction | DrawAction | MeldAction | LayAction | DiscardAction
+
+/**
+ * A pong recieved from the client. Indicates that the connection is still active.
+ */
+declare interface PongAction {
+    type: "pong"
+}
 /**
  * Sets the name of the current player.
  *
