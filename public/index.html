@@ -2,15 +2,36 @@
 <head>
 	<title>Rummy</title>
 	<script type="module" src="js/index.js"></script>
+	<script> //finds the class with the name settings and toggles its visibility
+		let settingsHidden = true;
+        function toggleSettings() {
+			var a = document.getElementById('board');
+			//a.style.backgroundColor = blue;
+			if(settingsHidden==false){
+           		var x = document.getElementsByClassName("settings");
+            	for (var i = 0; i < x.length; i++) {
+                	x[i].style.display = "none";
+            	}
+				settingsHidden=true;
+			}
+			else{
+				var x = document.getElementsByClassName("settings");
+            	for (var i = 0; i < x.length; i++) {
+                	x[i].style.display = "initial";
+            	}
+				settingsHidden=false;
+			}
+        }
+    </script>
 	<link rel="stylesheet" href="css/index.css">
 	<link rel="stylesheet" href="css/card.css">
 	<link rel="stylesheet" href="themes/front/minimal/front-minimal.css">
 	<link rel="stylesheet" href="themes/back/minimal/back-minimal.css">
 </head>
 <body>
-	<div id="board"></div>
+	<div id="board" class="Red"></div>
 	<div class="toolbar">
-		<a href="settings.html" target="_blank" rel="noopener noreferrer"><button id="settings-button">Settings</button></a> <!--Button acts as a link to settings page-->
+		<button onclick="toggleSettings()">Settings</button>
 		<a href="help.html" target="_blank" rel="noopener noreferrer"><button id="help-button">Help</button></a> <!--Button acts as a link to help page-->
 	</div>
 	<div class="lobby">
@@ -22,6 +43,51 @@
 			<button id="add-ai-button">Add AI</button>
 			<button id="lobby-primary" class="primary">Join Game</button>
 		</div>
+		<div class="settings">
+			<br>
+			<p> Aces high 
+				<label onclick="toggle()">
+					<input type="checkbox">
+				</label>
+			</p>
+			<!-- Simply toggles if aces are low or high when user presses the button -->
+			<script>
+				let acesLow = true;
+				console.log("Default value f acesLow is", acesLow);
+		
+				//toggles acesLow to true or false with a console message as well
+				function toggle(){
+					acesLow = !acesLow;
+					console.log("acesLow is now", acesLow); //this will appear under inspect element under console
+				}
+			</script>
+			<button class="colorButton">Blue</button>
+			<button class="colorButton">Red</button>
+			<button class="colorButton">Green</button>
+			<button class="colorButton">Orange</button>
+			<button class="colorButton">Pink</button>
+			<button class="colorButton">Purple</button>
+			<button class="colorButton">Brown</button>
+			<button class="colorButton">Black</button>
+			<button class="colorButton">Gray</button>
+			<!--allows users to change the color of the background to those defined above -->
+			<script> 
+				let z = document.getElementById('board');
+				let currentColor = "Red";
+				const colorButtons = [...document.querySelectorAll('.colorButton')];
+				document.addEventListener('click', e => {
+				if (!colorButtons.includes(e.target)) return;
+				z.classList.replace(currentColor,e.target.textContent);
+				currentColor = e.target.textContent;
+				});
+			</script>
+		</div>
+		<script> //makes sure settings is set to hidden to start
+			var x = document.getElementsByClassName("settings");
+            	for (var i = 0; i < x.length; i++) {
+                	x[i].style.display = "none";
+            	}
+		</script>
 	</div>
 </body>
 </html>
