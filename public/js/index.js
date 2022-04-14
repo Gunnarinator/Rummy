@@ -34,6 +34,7 @@ function resetBoard(event) {
 	for (let cardID of event.card_ids) { //modifies board html to display the cards
 		let card = document.createElement("div")
 		card.classList.add("card") //this can be where I add different colors
+		//card.classList.add("Red")
 		card.id = `card-${cardID}`
 		card.dataset.id = cardID
 		card.addEventListener("click", function () { handleCardClick(this.dataset.id) }) //will probably look something like this
@@ -131,7 +132,7 @@ function updateCard(card, position, turnState) {
 			attributeMap.pin = "bottom"
 			break
 		case "opponent-hand":
-			classString += " face-down spread hand"
+			classString += " face-down spread hand" // here I can change color?
 			if (turnState) classString += " turn"
 			attributeMap.pin = position.position
 			break
