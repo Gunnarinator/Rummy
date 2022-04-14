@@ -31,12 +31,12 @@ function resetBoard(event) {
 	if (boardElement.classList.contains("hidden")) boardElement.classList.remove("hidden")
 	if (!id("lobby").classList.contains("hidden")) id("lobby").classList.add("hidden")
 	boardElement.innerHTML = ""
-	for (let cardID of event.card_ids) {
+	for (let cardID of event.card_ids) { //modifies board html to display the cards
 		let card = document.createElement("div")
-		card.classList.add("card")
+		card.classList.add("card") //this can be where I add different colors
 		card.id = `card-${cardID}`
 		card.dataset.id = cardID
-		card.addEventListener("click", function () { handleCardClick(this.dataset.id) })
+		card.addEventListener("click", function () { handleCardClick(this.dataset.id) }) //will probably look something like this
 		boardElement.appendChild(card)
 	}
 	for (let player of event.players) {
