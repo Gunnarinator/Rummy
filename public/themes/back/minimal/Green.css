@@ -1,0 +1,5 @@
+.card:after {
+	background-image: repeating-linear-gradient(-45deg, rgb(102, 255, 0) 0%, rgb(18, 78, 6) 3%, #333 3%, #333 6%);
+	border: 2px solid #444;
+}
+
