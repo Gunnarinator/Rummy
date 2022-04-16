@@ -45,6 +45,17 @@ export function handleEvent(event) {
             }
             state.board.discard = []
             ui.updateBoardState()
+            break
+        case "end":
+            if (state.type !== "game") return
+            if (event.winner_id) {
+                for (let score of Object.values(event.hand_values)) {
+                    state.scores[event.winner_id] = (state.scores[event.winner_id] ?? 0) + score
+                }
+            }
+            break
+        default:
+            console.error("Unrecognized event", event)
     }
 }
 

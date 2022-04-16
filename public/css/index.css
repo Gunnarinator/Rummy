@@ -130,12 +130,15 @@ body {
 .lobby-options {
 	width: 8em;
 	height: 4em;
-	position: relative;
 	margin: 5vh auto;
 	border-radius: 0.5em;
 	overflow: hidden;
 	will-change: transform;
 	font-size: 1.4rem;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
 }
 
 #remove-ai-button {
@@ -173,7 +176,7 @@ body {
 
 .lobby-players {
 	line-height: 1.2em;
-	height: 7.2em;
+	max-width: 70vw;
 	overflow-y: auto;
 	margin: 5vh auto;
 	font-size: 5vh;
@@ -181,14 +184,30 @@ body {
 	text-align: center;
 	width: 50vw;
 	padding: 0;
+	color: inherit;
 }
 
-.lobby-players li {
-	max-width: 70vw;
+.lobby-players td {
 	overflow: hidden;
 	height: 1.2em;
 	text-overflow: ellipsis;
 	white-space: nowrap;
+	padding: 0;
+}
+
+.lobby-players td+td {
+	padding-left: 0.5em;
+	font-weight: 600;
+}
+
+.lobby-players td:first-child {
+	text-align: right;
+}
+.lobby-players td:last-child {
+	text-align: left;
+}
+.lobby-players td:first-child:last-child {
+	text-align: center;
 }
 
 .lobby-players:empty:before {

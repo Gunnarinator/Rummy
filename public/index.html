@@ -2,9 +2,9 @@
 	<head>
 		<title>Rummy</title>
 		<script type="module" src="js/index.js"></script>
-		<script> 
+		<script>
 			let settingsHidden = true;
-			
+
 			function toggleSettings() { //finds the class with the name settings and toggles its visibility
 				if(settingsHidden==false){
 					var x = document.getElementById("settings")
@@ -36,7 +36,7 @@
 		<div id="lobby">
 			<div class="lobby-logo">Super Rummy</div>
 			<div class="lobby-code">--- ---</div>
-			<ul class="lobby-players"></ul>
+			<table class="lobby-players"></table>
 			<div class="lobby-options">
 				<button id="remove-ai-button" disabled>—</button>
 				<button id="add-ai-button">Add AI</button>
@@ -45,7 +45,7 @@
 			<div id = "settings">
 				<br>
 				<p> You will not be able to access Settings during a game </p>
-				<p> Aces high 
+				<p> Aces high
 					<label onclick="toggle()">
 						<input type="checkbox">
 					</label>
@@ -53,7 +53,7 @@
 				<script>
 					let acesLow = true;
 					console.log("Default value f acesLow is", acesLow);
-			
+
 					//toggles acesLow to true or false with a console message as well
 					function toggle(){
 						acesLow = !acesLow;
@@ -71,7 +71,7 @@
 				<button class="colorButton">Black</button>
 				<button class="colorButton">Gray</button>
 				<!--allows users to change the color of the background to those defined above, but not after game starts -->
-				<script> 
+				<script>
 					let z = document.getElementsByTagName("BODY");
 					let currentColor = "Red";
 					const colorButtons = [...document.querySelectorAll('.colorButton')];

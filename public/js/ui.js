@@ -8,6 +8,7 @@ import * as rules from "./rules.js"
 export function resetBoard(event) {
     setState({
         type: "game",
+        scores: state.scores ?? {},
         board: {
             current_player_id: event.current_player_id,
             deck: event.card_ids.map(id => ({ id })),
@@ -111,12 +112,13 @@ export function updatePlayerAccessories(player, position) {
     let playerSecondaryElement = id(`player-${player.id}-secondary`)
     let primaryStyle = `--stack-size:${player.hand.length}`
     let secondaryStyle = `--stack-size:${player.hand.length}`
+    let score = `${state.scores[player.id] ?? 0} points`
     if (playerPrimaryElement.getAttribute("style") !== primaryStyle) playerPrimaryElement.setAttribute("style", primaryStyle)
     if (playerSecondaryElement.getAttribute("style") !== secondaryStyle) playerSecondaryElement.setAttribute("style", secondaryStyle)
     if (playerPrimaryElement.getAttribute("data-pin") !== position) playerPrimaryElement.setAttribute("data-pin", position)
     if (playerSecondaryElement.getAttribute("data-pin") !== position) playerSecondaryElement.setAttribute("data-pin", position)
     if (playerPrimaryElement.innerText != player.name) playerPrimaryElement.innerText = player.name
-    if (playerSecondaryElement.innerText != `0 points`) playerSecondaryElement.innerText = `0 points`
+    if (playerSecondaryElement.innerText != score) playerSecondaryElement.innerText = score
 }
 
 /**
@@ -199,14 +201,22 @@ export function updateLobbyState() {
     let lobby = state.lobby
     document.querySelector(".lobby-code").textContent = lobby.code.replace(/.../, "$& ")
     document.querySelector(".lobby-players").innerHTML = ""
+    let showScores = lobby.players.some(({ id }) => id in state.scores)
     if (lobby.players.length > 1) {
         for (let player of lobby.players) {
-            let li = document.createElement("li")
+            let tr = document.createElement("tr")
+            let nameBox = document.createElement("td")
             let name = player.name
             if (player.id == lobby.current_player_id)
                 name += " (you)"
-            li.textContent = name
-            document.querySelector(".lobby-players").appendChild(li)
+            nameBox.textContent = name
+            tr.appendChild(nameBox)
+            if (showScores) {
+                let scoreBox = document.createElement("td")
+                scoreBox.textContent = `${state.scores[player.id] || 0} points`
+                tr.appendChild(scoreBox)
+            }
+            document.querySelector(".lobby-players").appendChild(tr)
         }
     }
     (/** @type {HTMLButtonElement}*/ (document.querySelector("#remove-ai-button"))).disabled = !lobby.players.some(player => !player.human)
