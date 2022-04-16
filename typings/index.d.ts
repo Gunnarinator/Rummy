@@ -51,7 +51,7 @@ declare interface Card {
     face?: {
         suit: "hearts" | "diamonds" | "spades" | "clubs"
         rank: "A" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10" | "J" | "Q" | "K"
-    }
+    } | {suit: "joker", "rank": "W"}
 }
 /**
  * A stack or row of cards. A stack of cards is ordered from top to bottom, while a row is ordered from left to right.

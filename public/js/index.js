@@ -2,13 +2,18 @@
 import * as connection from "./connection.js"
 import * as controls from "./controls.js"
 
-/** @type {{type: "loading"} | {type: "lobby", lobby: Lobby} | {type: "game", board: Board, ui: GameUIState}} */
+/**
+ * @typedef {{type: "loading", lobby?: never, board?: never, ui?: never} |
+ * 		{type: "lobby", lobby: Lobby, board?: never, ui?: never} |
+ * 		{type: "game", board: Board, ui: GameUIState, lobby?: never}
+ * } State
+ */
+
+/** @type {State} */
 export let state = { type: "loading" }
 
 /**
- * @template {{type: "loading"} | {type: "lobby", lobby: Lobby} | {type: "game", board: Board, ui: GameUIState}} S
- * @param {S} s
- * @return {asserts state is S}
+ * @param {State} s
 */
 export function setState(s) {
 	state = s

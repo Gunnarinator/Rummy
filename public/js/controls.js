@@ -1,6 +1,6 @@
 import * as connection from "./connection.js"
 import { id, state } from "./index.js"
-
+import * as rules from "./rules.js"
 /**
  * @param {string} cardID
  */
@@ -19,7 +19,6 @@ export function handleCardClick(cardID) {
                 })
             }
         } else {
-            //@ts-ignore
             if (state.board.players.find(player => player.id == state.board.current_player_id)?.hand.some(({ id }) => id == cardID)) {
                 if (state.ui.selectedCardIDs.has(cardID)) {
                     state.ui.selectedCardIDs.delete(cardID)
@@ -65,13 +64,19 @@ export function updateControlsState() {
     else if (state.board.turn?.player_id != state.board.current_player_id || state.board.turn?.state != "play")
         button.dataset.action = state.ui.primaryAction = "none"
     else if (state.ui.selectedCardIDs.size == 1)
-        // TODO: use "lay" if the selected card can be laid down
-        if ([...state.ui.selectedCardIDs][0] != state.ui.nonDiscardableCard)
+        if (rules.getMeldsForLay().length > 0)
+            button.dataset.action = state.ui.primaryAction = "lay"
+        else if ([...state.ui.selectedCardIDs][0] != state.ui.nonDiscardableCard)
             button.dataset.action = state.ui.primaryAction = "discard"
         else
             button.dataset.action = state.ui.primaryAction = "none"
     else if (state.ui.selectedCardIDs.size > 1)
-        button.dataset.action = state.ui.primaryAction = "meld"
+        if (rules.canMeldSelectedCards())
+            button.dataset.action = state.ui.primaryAction = "meld"
+        else if (rules.getMeldsForLay().length > 0)
+            button.dataset.action = state.ui.primaryAction = "lay"
+        else
+            button.dataset.action = state.ui.primaryAction = "none"
     else
         button.dataset.action = state.ui.primaryAction = "none"
 }
