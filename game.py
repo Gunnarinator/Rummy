@@ -54,7 +54,7 @@ def handleAction(action: Action, connection: 'l.Connection'):
         # The server should verify that at least two players are in the game.
         assert game is None
         assert len(lobby.connections) + len(lobby.aiPlayers) >= 2
-        game = Game(lobby, GameSettings())
+        game = Game(lobby)
         game.start()
 
     elif isinstance(action, DrawAction):
@@ -143,6 +143,15 @@ def handleAction(action: Action, connection: 'l.Connection'):
         assert card is not game.non_discardable_card
         game.moveCardsToDiscard([card], player.hand)
         game.nextTurn()
+
+    elif isinstance(action, SettingsAction):
+
+        # Changes the current game settings.
+        # The server should verify that the settings are valid and that the game has not started.
+        #  - settings (GameSettings): The new settings.
+        assert game is None
+        lobby.settings = action.settings
+        lobby.informPlayersOfLobby()
 
     else:
         raise RuntimeError("Unknown action type")

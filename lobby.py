@@ -46,6 +46,7 @@ class Lobby:
         self.connections: list[str] = []
         self.aiPlayers: list[AILobbyPlayer] = []
         self.code = str(random.randint(0, 999999)).rjust(6, "0")
+        self.settings = GameSettings()
         lobbies[self.code] = self
 
     def addPlayer(self, player: Connection):
@@ -82,7 +83,8 @@ class Lobby:
                         id=p.id,
                         human=False,
                         name=p.name
-                    ) for p in self.aiPlayers]
+                    ) for p in self.aiPlayers],
+                    settings=self.settings
                 )
             ))
 
@@ -155,6 +157,3 @@ def parseAction(action: str) -> Action:
     assert "type" in o
     assert o["type"] in actionTypeMap
     return actionTypeMap[o["type"]].decodeObject(o)
-
-
-# import last so that Lobby and Connection easily available to game

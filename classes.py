@@ -12,36 +12,6 @@ from protocol import *
 games: dict[str, "Game"] = {}
 
 
-class GameSettings:
-
-    # deck_count, hand_size, first_turn, allow_draw_choice, allow_run_mixed_suit, limit_meld_size, ace_rank, deck_exhaust, require_end_discard, lay_at_end
-    def __init__(self,
-                 deck_count: int = 1,
-                 enable_jokers: bool = False,
-                 hand_size: int = 7,
-                 first_turn: Literal["next_player",
-                                     "prev_winner", "random"] = "next_player",
-                 allow_draw_choice: bool = False,
-                 allow_run_mixed_suit: bool = False,
-                 limit_meld_size: Optional[Literal[3, 4]] = None,
-                 ace_rank: Literal["low", "high"] = "low",
-                 deck_exhaust: Literal["flip_discard",
-                                       "shuffle_discard", "end_round"] = "flip_discard",
-                 require_end_discard: bool = False,
-                 lay_at_end: bool = True):
-        self.deck_count = deck_count
-        self.enable_jokers = enable_jokers
-        self.hand_size = hand_size
-        self.first_turn = first_turn
-        self.allow_draw_choice = allow_draw_choice
-        self.allow_run_mixed_suit = allow_run_mixed_suit
-        self.limit_meld_size = limit_meld_size
-        self.ace_rank = ace_rank
-        self.deck_exhaust = deck_exhaust
-        self.require_end_discard = require_end_discard
-        self.lay_at_end = lay_at_end
-
-
 class ServerCard:
     def __init__(self, face: CardFace):
         self.id = uuid4().hex
@@ -183,12 +153,12 @@ class BoardAIPlayer():
 
 
 class Game:
-    def __init__(self, l: 'lobby.Lobby', settings: GameSettings):
+    def __init__(self, l: 'lobby.Lobby'):
         self.lobby = l.code
-        self.settings = settings
+        self.settings = l.settings
         games[self.lobby] = self
         # TODO: jokers are not currently supported
-        self.deck = Stack(settings.deck_count, settings.enable_jokers)
+        self.deck = Stack(l.settings.deck_count, l.settings.enable_jokers)
         self.discard = Stack(0, False)
         self.players: list["BoardPlayer"] = [BoardPlayer(
             lobby.connections[player]) for player in l.connections]
@@ -273,7 +243,7 @@ class Game:
                 player.makeForClient(client is player) for player in self.players
             ] + [
                 player.makeForClient() for player in self.aiPlayers
-            ], client.connection.id, [card.id for card in self.deck.cards], self.lobby))
+            ], client.connection.id, [card.id for card in self.deck.cards], self.lobby, self.settings))
 
         # deal out the cards
         self.deal()

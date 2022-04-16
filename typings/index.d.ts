@@ -75,6 +75,8 @@ declare interface Lobby {
     current_player_id: string
     /** The code to join the current game. */
     code: string
+    /** The game settings. */
+    settings: GameSettings
 }
 declare type Meld = Stack
 declare interface Board {
@@ -110,6 +112,10 @@ declare interface Board {
      * A code that other players may use to join the game before it starts.
      */
     game_code: string
+    /**
+     * The game settings.
+     */
+    settings: GameSettings
 }
 
 /**
@@ -152,6 +158,8 @@ declare interface StartEvent {
     card_ids: string[]
     /** A code that other players may use to join the game before it starts. */
     game_code: string
+    /** The current game settings. */
+    settings: GameSettings
 }
 /**
  * Updates the current turn state of the game.
@@ -202,7 +210,7 @@ declare interface RedeckEvent {
 }
 /**
  * Indicates that the game has ended. The values of the remaining hands are tallied for scorekeeping. The client keeps track of score.
- **/
+ */
 declare interface EndEvent {
     type: "end"
     /** The player ID of the winner. */
@@ -225,10 +233,11 @@ declare interface EndEvent {
  * `"meld"`: Lay down some cards to create a meld.
  * `"lay"`: Lay down a card to add to an existing meld.
  * `"discard"`: Discard a card.
+ * `"settings"`: Changes the current game settings.
  *
  * The server should verify the legality of every action taken by the client, including whether it is the player's turn, and that the player's turn state is appropriate.
  */
-declare type Action = PongAction | NameAction | AIAction | JoinAction | StartAction | DrawAction | MeldAction | LayAction | DiscardAction
+declare type Action = PongAction | NameAction | AIAction | JoinAction | StartAction | DrawAction | MeldAction | LayAction | DiscardAction | SettingsAction
 
 /**
  * A pong recieved from the client. Indicates that the connection is still active.
@@ -314,3 +323,27 @@ declare interface DiscardAction {
     /** The ID of the card to discard. */
     card_id: string
 }
+/**
+ * Changes the current game settings.
+ *
+ * The server should verify that the settings are valid and that the game has not started.
+ */
+declare interface SettingsAction {
+    type: "settings"
+    settings: GameSettings
+}
+
+declare interface GameSettings {
+    deck_count: number
+    enable_jokers: boolean
+    hand_size: number
+    first_turn: "next_player" | "prev_winner" | "random"
+    allow_draw_choice: boolean
+    allow_run_mixed_suit: boolean
+    limit_meld_size: 3 | 4 | null
+    ace_rank: "low" | "high"
+    deck_exhaust: "flip_discard" | "shuffle_discard" | "end_round"
+    require_end_discard: boolean
+    lay_at_end: boolean
+}
+
