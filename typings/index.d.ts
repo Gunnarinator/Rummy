@@ -216,7 +216,7 @@ declare interface RedeckEvent {
 declare interface EndEvent {
     type: "end"
     /** The player ID of the winner. */
-    winner_id: string
+    winner_id: string | null
     /** A map (keyed by player ID) showing the hand values of the losing players. These point values will be added to the winner's score. "Rummy" should already be accounted for. */
     hand_values: Record<string, number>
 }

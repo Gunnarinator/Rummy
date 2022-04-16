@@ -511,7 +511,7 @@ class EndEvent(Encodable):
         hand_values (dict[str, int]): A map (keyed by player ID) showing the hand values of the losing players. These point values will be added to the winner's score. "Rummy" should already be accounted for.
     """
 
-    def __init__(self, winner_id: str, hand_values: dict[str, int]):
+    def __init__(self, winner_id: Optional[str], hand_values: dict[str, int]):
         """
         Indicates that the game has ended. The values of the remaining hands are tallied for scorekeeping. The client keeps track of score.
 

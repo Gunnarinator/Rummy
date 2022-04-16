@@ -101,6 +101,24 @@ def rankValue(card: 'classes.ServerCard', settings: GameSettings):
     else:
         return int(card.face.rank)
 
+
+def scoreValue(card: 'classes.ServerCard', settings: GameSettings):
+    if card.face.rank == "W":
+        return 15
+    elif card.face.rank == "J":
+        return 10
+    elif card.face.rank == "Q":
+        return 10
+    elif card.face.rank == "K":
+        return 10
+    elif card.face.rank == "A":
+        if settings.ace_rank == "low":
+            return 1
+        else:
+            return 11
+    else:
+        return int(card.face.rank)
+
 # checkSet but for runs.
 # cards is an array
 # returns a bool for whether cards is a valid run or not.

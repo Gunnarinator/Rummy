@@ -254,7 +254,7 @@ class Game:
 
     def redeck(self):
         if self.settings.deck_exhaust == "end_round" or len(self.discard.cards) == 0:
-            self.end()
+            self.end(None)
             # returning False here is how the caller (nextTurn()) knows that the game is over
             return False
         elif self.settings.deck_exhaust == "flip_discard":
@@ -290,8 +290,15 @@ class Game:
                     [card.id for card in self.deck.cards]))
             return True
 
-    def end(self):
-        # TODO: calculate hand scores and send an EndEvent to each player
+    def end(self, winnerID: Optional[str]):
+        # TODO: if settings.lay_at_end is enabled, automatically all possible cards to minimize hand scores
+        event = EndEvent(winnerID, {
+            player.connection.id: sum(funlib.scoreValue(card, self.settings) for card in player.hand.cards) for player in self.players
+        } | {
+            player.profile.id: sum(funlib.scoreValue(card, self.settings) for card in player.hand.cards) for player in self.aiPlayers
+        })
+        for client in self.players:
+            client.connection.sendEvent(event)
 
         # deleting the games entry stops player actions from being processed as game actions
         del games[self.lobby]
@@ -301,8 +308,20 @@ class Game:
             lobby.lobbies[self.lobby].informPlayersOfLobby()
 
     def checkGameOver(self):
-        if any(len(player.hand.cards) == 0 for player in self.players) or any(len(player.hand.cards) == 0 for player in self.aiPlayers):
-            self.end()
+        winner = None
+        for player in self.players:
+            if len(player.hand.cards) == 0:
+                winner = player
+                break
+        if winner is not None:
+            self.end(winner.connection.id)
+            return True
+        for player in self.aiPlayers:
+            if len(player.hand.cards) == 0:
+                winner = player
+                break
+        if winner is not None:
+            self.end(winner.profile.id)
             return True
         return False
 
@@ -316,7 +335,7 @@ class Game:
 
         # if there are no human players left, or if there are less than two active (connected or AI) players, end the round
         if connectedPlayers == 0 or connectedPlayers + len(self.aiPlayers) < 2:
-            self.end()
+            self.end(None)
             return
 
         # if the deck is exhausted, flip or resuffle the deck according to the game settings
