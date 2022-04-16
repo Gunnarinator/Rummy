@@ -14,7 +14,10 @@ function getSelectedCards() {
  * @return {boolean}
  */
 export function canMeldSelectedCards() {
-    if (state.type !== "game") return false
+    if (state.type !== "game" || state.ui.selectedCardIDs.size == 0) return false
+    if (state.board.settings.require_end_discard &&
+        state.ui.selectedCardIDs.size == state.board.players
+            .find(({ id }) => id === state.board.current_player_id).hand.length) return false
     let selectedCards = getSelectedCards()
     return isValidMeld(selectedCards)
 }
@@ -23,7 +26,10 @@ export function canMeldSelectedCards() {
  * @return {number[]}
  */
 export function getMeldsForLay() {
-    if (state.type !== "game") return []
+    if (state.type !== "game" || state.ui.selectedCardIDs.size == 0) return []
+    if (state.board.settings.require_end_discard &&
+        state.ui.selectedCardIDs.size == state.board.players
+            .find(({ id }) => id === state.board.current_player_id).hand.length) return []
     let selectedCards = getSelectedCards()
     return [...state.board.melds.entries()]
         .filter(([, meld]) => isValidMeld(meld.concat(selectedCards)))

@@ -92,3 +92,8 @@ button:active {
     background-color: #00e050;
     --content: "Lay";
 }
+[data-action="cancel"] {
+    color: white;
+    background-color: #666;
+    --content: "Cancel";
+}

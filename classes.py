@@ -89,9 +89,11 @@ class Stack:
 
     def remove(self, cards: list[ServerCard]):
         for card in cards:
-            self.cards.remove(card)
+            if card in self.cards:
+                self.cards.remove(card)
 
     def insert(self, cards: list[ServerCard], position: int):
+        self.remove(cards)
         for card in cards:
             self.cards.insert(position, card)
             position = position + 1
@@ -297,6 +299,12 @@ class Game:
         # sending a lobby event updates clients on what players are still in the lobby for the next round
         if self.lobby in lobby.lobbies:
             lobby.lobbies[self.lobby].informPlayersOfLobby()
+
+    def checkGameOver(self):
+        if any(len(player.hand.cards) == 0 for player in self.players) or any(len(player.hand.cards) == 0 for player in self.aiPlayers):
+            self.end()
+            return True
+        return False
 
     def nextTurn(self):
 

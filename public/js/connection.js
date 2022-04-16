@@ -24,6 +24,7 @@ export function handleEvent(event) {
                 player_id: event.player_id,
                 state: event.state
             }
+            state.ui.selectingMeldToLay = false
             ui.updateBoardState()
             break
         case "lobby":

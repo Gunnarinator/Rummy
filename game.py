@@ -101,18 +101,22 @@ def handleAction(action: Action, connection: 'l.Connection'):
         assert player is not None
         game.assertCurrentTurn(connection)
         assert game.turn_has_drawn is True
+        if game.settings.require_end_discard:
+            # only allow a meld or lay if there's at least a card left over to discard
+            assert len(action.card_ids) < len(player.hand.cards)
         assert all(any(c == h.id for h in player.hand.cards)
                    for c in action.card_ids)
         cards = [c for c in player.hand.cards if c.id in action.card_ids]
         assert funlib.checkLegal(cards, game.settings)
         funlib.sortStack(cards, game.settings)
         game.moveCardsToMeld(cards, player.hand, len(game.melds), 0)
+        game.checkGameOver()
 
     elif isinstance(action, LayAction):
 
         # Lay down a card to add to an existing meld.
         # The server should verify that the card is in the player's hand, and that the card forms a valid meld.
-        #  - card_id (str): The ID of the card to lay.
+        #  - card_ids (list[str]): The ID of the card to lay.
         #  - meld_number (int): The index of the meld to add the card to.
         assert game is not None
         player: Optional[BoardPlayer] = None
@@ -123,13 +127,18 @@ def handleAction(action: Action, connection: 'l.Connection'):
         assert player is not None
         game.assertCurrentTurn(connection)
         assert game.turn_has_drawn is True
+        if game.settings.require_end_discard:
+            # only allow a meld or lay if there's at least a card left over to discard
+            assert len(action.card_ids) < len(player.hand.cards)
         assert len(game.melds) > action.meld_number
-        assert any(c.id == action.card_id for c in player.hand.cards)
+        assert all(any(c == h.id for h in player.hand.cards)
+                   for c in action.card_ids)
         cards = game.melds[action.meld_number].cards + \
-            [c for c in player.hand.cards if c.id == action.card_id]
+            [c for c in player.hand.cards if c.id in action.card_ids]
         assert funlib.checkLegal(cards, game.settings)
         funlib.sortStack(cards, game.settings)
         game.moveCardsToMeld(cards, player.hand, action.meld_number, 0)
+        game.checkGameOver()
 
     elif isinstance(action, DiscardAction):
 
@@ -153,7 +162,8 @@ def handleAction(action: Action, connection: 'l.Connection'):
         assert card is not None
         assert card is not game.non_discardable_card
         game.moveCardsToDiscard([card], player.hand)
-        game.nextTurn()
+        if not game.checkGameOver():
+            game.nextTurn()
 
     elif isinstance(action, SettingsAction):
 

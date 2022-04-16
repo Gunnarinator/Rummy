@@ -6,8 +6,9 @@ declare interface GameUIState {
      * The cards in the player's hand that are currently selected to perform an action.
      */
     selectedCardIDs: Set<string>
-    primaryAction?: "discard" | "meld" | "lay" | "none"
+    primaryAction?: "discard" | "meld" | "lay" | "cancel" | "none"
     nonDiscardableCard?: string
+    selectingMeldToLay?: boolean
 }
 /**
  * A specifier for the position of a particular card. This is translated into CSS classes and variables.
@@ -34,6 +35,7 @@ declare type UICardPosition = {
     meld_column_count: number
     meld_row: number
     meld_row_count: number
+    eligible: boolean
 }
 /**
  * A Card instance is created for each card in the game, regardless of whether it has been dealt.
@@ -308,8 +310,8 @@ declare interface MeldAction {
  */
 declare interface LayAction {
     type: "lay"
-    /** The ID of the card to lay. */
-    card_id: string
+    /** The IDs of the cards to lay. */
+    card_ids: string[]
     /** The index of the meld to add the card to. */
     meld_number: number
 }

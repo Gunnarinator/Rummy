@@ -721,29 +721,31 @@ class LayAction(Decodable):
     The server should verify that the card is in the player's hand, and that the card forms a valid meld.
 
     Properties:
-        card_id (str): The ID of the card to lay.
+        card_ids (list[str]): The IDs of the cards to lay.
         meld_number (int): The index of the meld to add the card to.
     """
 
-    def __init__(self, card_id: str, meld_number: int):
+    def __init__(self, card_ids: str, meld_number: int):
         """
         Lay down a card to add to an existing meld.
 
         The server should verify that the card is in the player's hand, and that the card forms a valid meld.
 
         Args:
-            card_id (str): The ID of the card to lay.
+            card_ids (list[str]): The IDs of the cards to lay.
             meld_number (int): The index of the meld to add the card to.
         """
-        self.card_id = card_id
+        self.card_ids = card_ids
         self.meld_number = meld_number
 
     @classmethod
     def decodeObject(cls, data: JSONSafe) -> Self:
         assert isinstance(data, dict)
-        assert isinstance(data["card_id"], str)
         assert isinstance(data["meld_number"], int)
-        return LayAction(data["card_id"], data["meld_number"])
+        assert isinstance(data["card_ids"], list)
+        assert len(data["card_ids"]) > 0
+        assert all(isinstance(card_id, str) for card_id in data["card_ids"])
+        return LayAction(data["card_ids"], data["meld_number"])  # type: ignore
 
 
 class DiscardAction(Decodable):

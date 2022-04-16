@@ -1,13 +1,24 @@
 import * as connection from "./connection.js"
 import { id, state } from "./index.js"
 import * as rules from "./rules.js"
+import * as ui from "./ui.js"
 /**
  * @param {string} cardID
  */
 export function handleCardClick(cardID) {
     if (state.type != "game") return
     if (state.board.turn?.player_id == state.board.current_player_id) {
-        if (state.board.turn.state == "draw") {
+        if (state.ui.selectingMeldToLay) {
+            let [index, meld] = [...state.board.melds.entries()].find(([, meld]) => meld.some(card => card.id == cardID)) ?? []
+            if (meld && rules.getMeldsForLay().includes(index)) {
+                connection.sendAction({
+                    type: "lay",
+                    meld_number: index,
+                    card_ids: [...state.ui.selectedCardIDs]
+                })
+                state.ui.selectingMeldToLay = false
+            }
+        } if (state.board.turn.state == "draw") {
             if (state.board.deck[state.board.deck.length - 1]?.id == cardID || state.board.discard[state.board.discard.length - 1]?.id == cardID) {
                 if (state.board.discard[state.board.discard.length - 1]?.id == cardID)
                     state.ui.nonDiscardableCard = cardID
@@ -53,6 +64,14 @@ export function performPrimaryAction() {
             })
             break
         case "lay":
+            state.ui.selectingMeldToLay = true
+            updateControlsState()
+            ui.updateBoardState()
+            break
+        case "cancel":
+            state.ui.selectingMeldToLay = false
+            updateControlsState()
+            ui.updateBoardState()
             break
     }
 }
@@ -61,6 +80,8 @@ export function updateControlsState() {
     let button = id("main-action-button")
     if (state.type !== "game")
         button.dataset.action = "none"
+    else if (state.ui.selectingMeldToLay)
+        button.dataset.action = state.ui.primaryAction = "cancel"
     else if (state.board.turn?.player_id != state.board.current_player_id || state.board.turn?.state != "play")
         button.dataset.action = state.ui.primaryAction = "none"
     else if (state.ui.selectedCardIDs.size == 1)

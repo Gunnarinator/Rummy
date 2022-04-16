@@ -1,5 +1,6 @@
 import * as controls from "./controls.js"
 import { id, setState, state } from "./index.js"
+import * as rules from "./rules.js"
 
 /**
  * @param {StartEvent} event
@@ -55,8 +56,9 @@ export function resetBoard(event) {
  * @param {Card} card
  * @param {UICardPosition} position
  * @param {Board["turn"]["state"] | null | undefined} turnState
+ * @param {boolean} laySelection
  */
-export function updateCard(card, position, turnState) {
+export function updateCard(card, position, turnState, laySelection) {
     let cardElement = id(`card-${card.id}`)
     let classString = "card"
     let styleString = `--stack-index:${position.index};--stack-size:${position.stack_size};`
@@ -68,8 +70,9 @@ export function updateCard(card, position, turnState) {
     switch (position.type) {
         case "own-hand":
             classString += " face-up spread hand"
-            if (turnState == "play") classString += " turn hover-up"
+            if (!laySelection && turnState == "play") classString += " turn hover-up"
             if (position.selected) classString += " selected"
+            if (laySelection && !position.selected) classString += " faded"
             attributeMap.pin = "bottom"
             break
         case "opponent-hand":
@@ -84,9 +87,11 @@ export function updateCard(card, position, turnState) {
         case "discard":
             classString += " face-up discard"
             if (turnState == "draw" && position.index == position.stack_size - 1) classString += " hover-down"
+            if (laySelection) classString += " faded"
             break
         case "meld":
             classString += " face-up spread meld"
+            if (laySelection && !position.eligible) classString += " faded"
             styleString += `--meld-row:${position.meld_row};--meld-row-count:${position.meld_row_count};--meld-column:${position.meld_column};--meld-column-count:${position.meld_column_count};`
             break
     }
@@ -125,20 +130,21 @@ export function updateBoardState() {
             type: "deck",
             index: i,
             stack_size: state.board.deck.length
-        }, turnState)
+        }, turnState, state.ui.selectingMeldToLay)
     }
     for (let [i, card] of state.board.discard.entries()) {
         updateCard(card, {
             type: "discard",
             index: i,
             stack_size: state.board.discard.length
-        }, turnState)
+        }, turnState, state.ui.selectingMeldToLay)
     }
     for (let [i, meld] of state.board.melds.entries()) {
         let columnCount = state.board.melds.length > 1 ? 2 : 1
         let rowCount = Math.ceil(state.board.melds.length / columnCount)
         let column = i % columnCount
         let row = Math.floor(i / columnCount)
+        let eligibleMelds = rules.getMeldsForLay()
         for (let [j, card] of meld.entries()) {
             updateCard(card, {
                 type: "meld",
@@ -147,8 +153,9 @@ export function updateBoardState() {
                 meld_row: row,
                 meld_row_count: rowCount,
                 meld_column: column,
-                meld_column_count: columnCount
-            }, turnState)
+                meld_column_count: columnCount,
+                eligible: eligibleMelds.includes(i)
+            }, turnState, state.ui.selectingMeldToLay)
         }
     }
     let rotatedPlayers = [...state.board.players]
@@ -170,7 +177,7 @@ export function updateBoardState() {
                 position: /**@type {any}*/(playerPosition),
                 index: j,
                 stack_size: player.hand.length
-            }, state.board.turn?.player_id == player.id ? state.board.turn.state : null)
+            }, state.board.turn?.player_id == player.id ? state.board.turn.state : null, state.ui.selectingMeldToLay)
         }
         if (player.id === state.board.current_player_id) {
             for (let card of state.ui.selectedCardIDs) {
