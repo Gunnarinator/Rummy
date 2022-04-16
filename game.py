@@ -101,7 +101,12 @@ def handleAction(action: Action, connection: 'l.Connection'):
         assert player is not None
         game.assertCurrentTurn(connection)
         assert game.turn_has_drawn is True
-        raise NotImplementedError()
+        assert all(any(c == h.id for h in player.hand.cards)
+                   for c in action.card_ids)
+        cards = [c for c in player.hand.cards if c.id in action.card_ids]
+        assert funlib.checkLegal(cards, game.settings)
+        funlib.sortStack(cards, game.settings)
+        game.moveCardsToMeld(cards, player.hand, len(game.melds), 0)
 
     elif isinstance(action, LayAction):
 
@@ -118,7 +123,13 @@ def handleAction(action: Action, connection: 'l.Connection'):
         assert player is not None
         game.assertCurrentTurn(connection)
         assert game.turn_has_drawn is True
-        raise NotImplementedError()
+        assert len(game.melds) > action.meld_number
+        assert any(c.id == action.card_id for c in player.hand.cards)
+        cards = game.melds[action.meld_number].cards + \
+            [c for c in player.hand.cards if c.id == action.card_id]
+        assert funlib.checkLegal(cards, game.settings)
+        funlib.sortStack(cards, game.settings)
+        game.moveCardsToMeld(cards, player.hand, action.meld_number, 0)
 
     elif isinstance(action, DiscardAction):
 

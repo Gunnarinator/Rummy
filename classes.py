@@ -198,7 +198,7 @@ class Game:
     def moveCardsToMeld(self, cards: list[ServerCard], originalStack: Stack, meldNumber: int, destPosition: int):
         originalStack.remove(cards)
         meldNumber = min(max(meldNumber, 0), len(self.melds))
-        if (meldNumber > len(self.melds)):
+        if (meldNumber > len(self.melds) - 1):
             self.melds.append(Stack(0, False))
         destPosition = min(max(destPosition, 0), len(
             self.melds[meldNumber].cards))
