@@ -89,6 +89,9 @@ def handleAction(action: Action, connection: 'l.Connection'):
 
     elif isinstance(action, MeldAction):
 
+        # TODO: "Rummy"
+        # TODO: A player can't go out until at least their second turn
+
         # Lay down some cards to create a meld.
         # The server should verify that (A) all cards are in the player's hand, and (B) that the cards form a valid meld.
         #  - card_ids (list[str]): A list of card IDs to lay down.
@@ -113,6 +116,8 @@ def handleAction(action: Action, connection: 'l.Connection'):
         game.checkGameOver()
 
     elif isinstance(action, LayAction):
+
+        # TODO: A player can't go out until at least their second turn
 
         # Lay down a card to add to an existing meld.
         # The server should verify that the card is in the player's hand, and that the card forms a valid meld.
