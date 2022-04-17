@@ -6,6 +6,9 @@ declare interface GameUIState {
      * The cards in the player's hand that are currently selected to perform an action.
      */
     selectedCardIDs: Set<string>
+    primaryAction?: "discard" | "meld" | "lay" | "cancel" | "none"
+    nonDiscardableCard?: string
+    selectingMeldToLay?: boolean
 }
 /**
  * A specifier for the position of a particular card. This is translated into CSS classes and variables.
@@ -32,6 +35,7 @@ declare type UICardPosition = {
     meld_column_count: number
     meld_row: number
     meld_row_count: number
+    eligible: boolean
 }
 /**
  * A Card instance is created for each card in the game, regardless of whether it has been dealt.
@@ -49,7 +53,7 @@ declare interface Card {
     face?: {
         suit: "hearts" | "diamonds" | "spades" | "clubs"
         rank: "A" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10" | "J" | "Q" | "K"
-    }
+    } | {suit: "joker", "rank": "W"}
 }
 /**
  * A stack or row of cards. A stack of cards is ordered from top to bottom, while a row is ordered from left to right.
@@ -73,6 +77,8 @@ declare interface Lobby {
     current_player_id: string
     /** The code to join the current game. */
     code: string
+    /** The game settings. */
+    settings: GameSettings
 }
 declare type Meld = Stack
 declare interface Board {
@@ -108,11 +114,16 @@ declare interface Board {
      * A code that other players may use to join the game before it starts.
      */
     game_code: string
+    /**
+     * The game settings.
+     */
+    settings: GameSettings
 }
 
 /**
  * A message recieved from the server.
  *
+ * `"ping"`: A ping recieved from the server. Client should immediately respond with a pong action.
  * `"lobby"`: Update the state of the lobby.
  * `"start"`: Resets the game to a default state where all players have empty hands, there is no meld, and the deck is shuffled.
  * `"turn"`: Update the current turn state of the game.
@@ -120,8 +131,14 @@ declare interface Board {
  * `"redeck"`: Indicates that the deck has been replenished from the discard pile.
  * `"end"`: Indicates that the game has ended. The values of the remaining hands are tallied for scorekeeping.
  */
-declare type GameEvent = LobbyEvent | StartEvent | TurnEvent | MoveEvent | RedeckEvent | EndEvent
+declare type GameEvent = PingEvent | LobbyEvent | StartEvent | TurnEvent | MoveEvent | RedeckEvent | EndEvent
 
+/**
+ * A ping recieved from the server. Client should immediately respond with a pong action.
+ */
+declare interface PingEvent {
+    type: "ping"
+}
 /**
  * A message received from the server that updates the state of the lobby.
  */
@@ -143,6 +160,8 @@ declare interface StartEvent {
     card_ids: string[]
     /** A code that other players may use to join the game before it starts. */
     game_code: string
+    /** The current game settings. */
+    settings: GameSettings
 }
 /**
  * Updates the current turn state of the game.
@@ -193,11 +212,11 @@ declare interface RedeckEvent {
 }
 /**
  * Indicates that the game has ended. The values of the remaining hands are tallied for scorekeeping. The client keeps track of score.
- **/
+ */
 declare interface EndEvent {
     type: "end"
     /** The player ID of the winner. */
-    winner_id: string
+    winner_id: string | null
     /** A map (keyed by player ID) showing the hand values of the losing players. These point values will be added to the winner's score. "Rummy" should already be accounted for. */
     hand_values: Record<string, number>
 }
@@ -207,6 +226,7 @@ declare interface EndEvent {
  *
  * The client does not assume any side-effects of these actions. The server must send events back to the client to indicate the result of the action.
  *
+ * `"pong"`: A pong recieved from the client. Indicates that the connection is still active.
  * `"name"`: Sets the name of the current player.
  * `"ai"`: Add or remove an AI player.
  * `"join"`: Joins a game.
@@ -215,10 +235,18 @@ declare interface EndEvent {
  * `"meld"`: Lay down some cards to create a meld.
  * `"lay"`: Lay down a card to add to an existing meld.
  * `"discard"`: Discard a card.
+ * `"settings"`: Changes the current game settings.
  *
  * The server should verify the legality of every action taken by the client, including whether it is the player's turn, and that the player's turn state is appropriate.
  */
-declare type Action = NameAction | AIAction | JoinAction | StartAction | DrawAction | MeldAction | LayAction | DiscardAction
+declare type Action = PongAction | NameAction | AIAction | JoinAction | StartAction | DrawAction | MeldAction | LayAction | DiscardAction | SettingsAction
+
+/**
+ * A pong recieved from the client. Indicates that the connection is still active.
+ */
+declare interface PongAction {
+    type: "pong"
+}
 /**
  * Sets the name of the current player.
  *
@@ -282,8 +310,8 @@ declare interface MeldAction {
  */
 declare interface LayAction {
     type: "lay"
-    /** The ID of the card to lay. */
-    card_id: string
+    /** The IDs of the cards to lay. */
+    card_ids: string[]
     /** The index of the meld to add the card to. */
     meld_number: number
 }
@@ -297,3 +325,27 @@ declare interface DiscardAction {
     /** The ID of the card to discard. */
     card_id: string
 }
+/**
+ * Changes the current game settings.
+ *
+ * The server should verify that the settings are valid and that the game has not started.
+ */
+declare interface SettingsAction {
+    type: "settings"
+    settings: GameSettings
+}
+
+declare interface GameSettings {
+    deck_count: number
+    enable_jokers: boolean
+    hand_size: number
+    first_turn: "next_player" | "prev_winner" | "random"
+    allow_draw_choice: boolean
+    allow_run_mixed_suit: boolean
+    limit_meld_size: 3 | 4 | null
+    ace_rank: "low" | "high"
+    deck_exhaust: "flip_discard" | "shuffle_discard" | "end_round"
+    require_end_discard: boolean
+    lay_at_end: boolean
+}
+

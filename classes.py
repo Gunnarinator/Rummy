@@ -1,187 +1,376 @@
+from random import shuffle
+from secrets import choice
+from typing import Union
+from uuid import uuid4
+
 import funlib
+import lobby
+from protocol import *
 
 # This file should contain all classes created by Super Rummy.
 
-
-# Board
-# The Board class will cover the state of the game.
-# self.Players = a list of players, each of which contains point values and hand.
-# self.deck = a stack of cards in the deck.
-# self.discard = a stack of cards in the discard pile.
-# self.melds = a 2d array of cards: melds[meld number][card-in-meld]
-# self.settings = a thing just so that we don't have to ask what the rules are every 5 seconds,
-#   if that ends up being inconvinient.
-
-class Board():
-    def __init__(self, players):
-        self.players = players
-        self.settings = Settings()
-        self.deck = Deck(self.settings.decknum)
-        self.discard = Deck(self.settings.decknum, True)
-        self.melds = []
-
-    # this just runs the entire game.
-
-    def game(self):
-        while(not self.gameOver()):
-            self.startRound()
-
-            while(not self.roundOver()):
-                for i in range(len(self.players)):
-                    self.takeTurn(self.players[i])
-
-            self.endRound()
-        return True
-
-    # start game will shuffle the deck(s), deal them out, then put a card on the discard pile.
-
-    def startRound(self):
-        # reset / shuffle the deck
-        self.deck = Deck(self.settings.decknum)
-        self.deck = self.deck.shuffle()
-
-        # reset hands / deal the cards
-        for i in range(len(self.players)):
-            self.players[i].hand = []
-            for j in range(self.settings.handsize):
-                self.players[i].hand.append(self.deck.pop())
-
-        # reset / put the top card in discard
-        self.discard.deck = Deck(self.settings.decknum, True)
-        self.discard.push(self.deck.pop())
-
-    # roundOver returns true if someone's hand is empty, otherwise return false.
-    def roundOver(self):
-        for i in range(len(self.players)):
-            if(len(self.players[i].hand) == 0):
-                return True
-        return False
-
-    # add everyone's score to their score count.
-    def endRound(self):
-        for i in range(len(self.players)):
-            for j in range(len(self.players[i].hand)):
-                self.players[i].score += self.players.hand[j].val
-
-    # checks to see whether anyone has enough points to win.
-    def gameOver(self):
-        for i in range(len(self.players)):
-            if(self.players[i].score >= self.settings.endscore):
-                return True
-        return False
-
-    # this is the main "player taking their turn" function.
-    def takeTurn(self, player):
-        # Draw a card from the deck or discard pile
-
-        # spend as long as you want selecting / deselecting cards
-
-        # play any potential melds
-
-        # discard a card
-
-        return True
+games: dict[str, "Game"] = {}
 
 
-class Deck():
+class ServerCard:
+    def __init__(self, face: CardFace):
+        self.id = uuid4().hex
+        self.face = face
 
-    # self.deck is an array of cards.
-    # self.top is the index of the top card in the stack.
-    # self.empty is whether or not it's empty
-    # discard is just used at the start to determine whether it's the discard pile or the deck.
-    def __init__(self, decks, discard=False):
-        if discard:
-            self.deck = [None] * 54 * decks
-            self.top = 54 * decks - 1
-            self.empty = True
-        else:
-            self.deck = funlib.newDeck(decks)
-            self.top = 0
-            self.empty = False
+    def makeForClient(self, visible: bool):
+        return ClientCard(id=self.id, face=self.face if visible else None)
 
-    def pop(self):
-        if(not self.empty):
-            retval = self.deck[self.top]
-            if(self.top == len(self.deck)-1):
-                self.empty = True
-            else:
-                self.top += 1
-        else:
-            retval = "Empty"
-        return retval
-
-    def shuffle(self):
-        retval = self.deck
-        # make retval a randomly organized version of self.deck
-        return retval
-
-    # just a get function, because self.top is an index, but deck.top() will be top card.
-    def top(self):
-        return self.deck[self.top]
-
-    # adds card to the top of the deck. this should only happen to discard piles.
-    def push(self, card):
-        if(self.top == 0):
-            return "Full?"
-        else:
-            self.top -= 1
-            self.deck[self.top] = card
-
-
-# Player
-# self.hand = an array of cards in that player's hand.
-# self.selected = an array of which cards that player has selected.
-# self.score = that player's score so far in the game. Only updated at the end of each round.
-
-class Player():
-    def __init__(self):
-        self.hand = []
-        self.selected = []
-        self.score = 0
-
-# Cards
-# This class will contain each card's information.
-# self.id = an integer to keep track of it, somewhere between 0 and (number of decks * 52) -1
-# self.num = a char to determine what should show up. A for ace, 2-9, 0 for 10,
-#   J, Q, K, for face cards, W for joker / wild card.
-# self.suit = a string to determine suit.
-#   the "four" suits are spades, clubs, hearts, diamonds, and jokers.
-# val = the point value of the card. numbers are worth that many points, J, Q, K are all 10
-#   A is either 1 or 11. I've seen it both ways. W is 20.
-
-
-class Card():
-    def __init__(self, id=0, num='A', suit="spades", val=11):
-        self.id = id
-        self.num = num
-        self.suit = suit
-        self.val = val
-
-    # True if this card is a joker.
-    def isJoker(self):
-        return self.suit == "joker"
-
-    # Returns a number from 1 to 13 (A to K). Joker returns 0
-    def toNum(self):
-        if(self.num == 'A'):
-            return 1
-        if(self.num == '0'):
-            return 10
-        if(self.num == 'J'):
-            return 11
-        if(self.num == 'Q'):
-            return 12
-        if(self.num == 'K'):
-            return 13
-        if(self.num == 'W'):
+    def sortingSuitPosition(self, settings: GameSettings):
+        if self.face.suit == "hearts":
             return 0
+        elif self.face.suit == "clubs":
+            return 1
+        elif self.face.suit == "diamonds":
+            return 2
+        elif self.face.suit == "spades":
+            return 3
         else:
-            return int(self.num)
+            return 4
+
+    def sortingRankPosition(self, settings: GameSettings):
+        if self.face.rank == "A":
+            return 14 if settings.ace_rank == "high" else 1
+        elif self.face.rank == "2":
+            return 2
+        elif self.face.rank == "3":
+            return 3
+        elif self.face.rank == "4":
+            return 4
+        elif self.face.rank == "5":
+            return 5
+        elif self.face.rank == "6":
+            return 6
+        elif self.face.rank == "7":
+            return 7
+        elif self.face.rank == "8":
+            return 8
+        elif self.face.rank == "9":
+            return 9
+        elif self.face.rank == "10":
+            return 10
+        elif self.face.rank == "J":
+            return 11
+        elif self.face.rank == "Q":
+            return 12
+        elif self.face.rank == "K":
+            return 13
+        else:
+            return 15
+
+    def isSortedBefore(self, other: Self, settings: GameSettings):
+        if self.sortingSuitPosition(settings) < other.sortingSuitPosition(settings):
+            return True
+        elif self.sortingSuitPosition(settings) == other.sortingSuitPosition(settings):
+            return self.sortingRankPosition(settings) < other.sortingRankPosition(settings)
+        else:
+            return False
 
 
-# really this is just a placeholder for the actual implementation of the settings that we do.
-class Settings():
-    def __init__(self) -> None:
-        self.endscore = 200
-        self.decknum = 2
-        self.handsize = 14
+class Stack:
+    def __init__(self, num_decks: int = 0, jokers: bool = False):
+        self.cards = funlib.newDeck(num_decks, jokers)
+
+    def top(self):
+        return self.cards[-1] if len(self.cards) > 0 else None
+
+    def assertedTop(self):
+        assert len(self.cards) > 0
+        return self.cards[-1]
+
+    def reshuffle(self):
+        shuffle(self.cards)
+        for i in range(len(self.cards)):
+            self.cards[i].id = uuid4().hex
+
+    def remove(self, cards: list[ServerCard]):
+        for card in cards:
+            if card in self.cards:
+                self.cards.remove(card)
+
+    def insert(self, cards: list[ServerCard], position: int):
+        self.remove(cards)
+        for card in cards:
+            self.cards.insert(position, card)
+            position = position + 1
+
+
+class BoardPlayer():
+    def __init__(self, connection: 'lobby.Connection'):
+        self.hand = Stack(0, False)
+        self.connection = connection
+
+    def getDestinationHandPosition(self, card: ServerCard, settings: GameSettings):
+        for i in range(len(self.hand.cards)):
+            if card.isSortedBefore(self.hand.cards[i], settings):
+                return i
+        return len(self.hand.cards)
+
+    def makeForClient(self, visibleCards: bool):
+        return ClientPlayer(self.connection.name, self.connection.id, [card.makeForClient(visibleCards) for card in self.hand.cards], True)
+
+    def skipTurn(self, game: 'Game'):
+        if game.turn_has_drawn:
+            cards = self.hand.cards.copy()
+            if game.non_discardable_card is not None:
+                try:
+                    cards.remove(game.non_discardable_card)
+                except Exception:
+                    pass
+            game.moveCardsToDiscard([choice(cards)], self.hand)
+            game.nextTurn()
+        else:
+            card = game.deck.assertedTop()
+            game.moveCardsToHand(
+                [card], game.deck, self, self.getDestinationHandPosition(card, game.settings))
+            game.moveCardsToDiscard([choice(self.hand.cards)], self.hand)
+            game.nextTurn()
+
+
+class BoardAIPlayer():
+    def __init__(self, lobbyPlayer: 'lobby.AILobbyPlayer'):
+        self.hand = Stack(0, False)
+        self.profile = lobbyPlayer
+
+    def getDestinationHandPosition(self, card: ServerCard, settings: GameSettings):
+        for i in range(len(self.hand.cards)):
+            if card.isSortedBefore(self.hand.cards[i], settings):
+                return i
+        return len(self.hand.cards)
+
+    def makeForClient(self):
+        return ClientPlayer(self.profile.name, self.profile.id, [card.makeForClient(False) for card in self.hand.cards], False)
+
+    def takeTurn(self, game: 'Game'):
+        # TODO: AI
+        card = game.deck.assertedTop()
+        game.moveCardsToAIHand(
+            [card], game.deck, self, self.getDestinationHandPosition(card, game.settings))
+        game.moveCardsToDiscard([card], self.hand)
+        game.nextTurn()
+
+
+class Game:
+    def __init__(self, l: 'lobby.Lobby'):
+        self.lobby = l.code
+        self.settings = l.settings
+        games[self.lobby] = self
+        # TODO: jokers are not currently supported
+        self.deck = Stack(l.settings.deck_count, l.settings.enable_jokers)
+        self.discard = Stack(0, False)
+        self.players: list["BoardPlayer"] = [BoardPlayer(
+            lobby.connections[player]) for player in l.connections]
+        self.aiPlayers = [BoardAIPlayer(player) for player in l.aiPlayers]
+        self.melds: list[Stack] = []
+        self.turn_player: int = 0  # TODO: respect settings.first_turn
+        self.turn_has_drawn: bool = False
+        self.non_discardable_card: Optional[ServerCard] = None
+
+    def moveCardsToDiscard(self, cards: list[ServerCard], originalStack: Stack):
+        originalStack.remove(cards)
+        destPosition = len(self.discard.cards)
+        for client in self.players:
+            client.connection.sendEvent(MoveEvent([
+                card.makeForClient(True) for card in cards
+            ], MoveDesinationDiscard()))
+        self.discard.insert(cards, destPosition)
+
+    def moveCardsToHand(self, cards: list[ServerCard], originalStack: Stack, player: BoardPlayer, destPosition: int):
+        originalStack.remove(cards)
+        destPosition = min(max(destPosition, 0), len(player.hand.cards))
+        for client in self.players:
+            client.connection.sendEvent(MoveEvent([
+                card.makeForClient(client is player) for card in cards
+            ], MoveDestinationPlayer(player.connection.id, destPosition)))
+        player.hand.insert(cards, destPosition)
+
+    def moveCardsToAIHand(self, cards: list[ServerCard], originalStack: Stack, player: BoardAIPlayer, destPosition: int):
+        originalStack.remove(cards)
+        destPosition = min(max(destPosition, 0), len(player.hand.cards))
+        for client in self.players:
+            client.connection.sendEvent(MoveEvent([
+                card.makeForClient(False) for card in cards
+            ], MoveDestinationPlayer(player.profile.id, destPosition)))
+        player.hand.insert(cards, destPosition)
+
+    def moveCardsToMeld(self, cards: list[ServerCard], originalStack: Stack, meldNumber: int, destPosition: int):
+        originalStack.remove(cards)
+        meldNumber = min(max(meldNumber, 0), len(self.melds))
+        if (meldNumber > len(self.melds) - 1):
+            self.melds.append(Stack(0, False))
+        destPosition = min(max(destPosition, 0), len(
+            self.melds[meldNumber].cards))
+        for client in self.players:
+            client.connection.sendEvent(MoveEvent([
+                card.makeForClient(True) for card in cards
+            ], MoveDestinationMeld(meldNumber, destPosition)))
+        self.melds[meldNumber].insert(cards, destPosition)
+
+    def deal(self):
+        for i in range(self.settings.hand_size):
+            for player in self.players:
+                card = self.deck.top()
+                assert card is not None
+                self.moveCardsToHand(
+                    [card], self.deck, player, player.getDestinationHandPosition(card, self.settings))
+            for player in self.aiPlayers:
+                card = self.deck.top()
+                assert card is not None
+                self.moveCardsToAIHand(
+                    [card], self.deck, player, player.getDestinationHandPosition(card, self.settings))
+        discard = self.deck.top()
+        assert discard is not None
+        self.moveCardsToDiscard([discard], self.deck)
+
+    def notifyPlayersOfTurnState(self):
+        if (self.turn_player < len(self.players)):
+            # it's a human player's turn
+            for client in self.players:
+                client.connection.sendEvent(TurnEvent(
+                    self.players[self.turn_player].connection.id, "play" if self.turn_has_drawn else "draw"))
+        else:
+            # it's an AI player's turn
+            for client in self.players:
+                client.connection.sendEvent(TurnEvent(
+                    self.aiPlayers[self.turn_player - len(self.players)].profile.id, "play" if self.turn_has_drawn else "draw"))
+
+    def start(self):
+        for client in self.players:
+            # send a start event notifying all players that the game is starting
+            client.connection.sendEvent(StartEvent([
+                player.makeForClient(client is player) for player in self.players
+            ] + [
+                player.makeForClient() for player in self.aiPlayers
+            ], client.connection.id, [card.id for card in self.deck.cards], self.lobby, self.settings))
+
+        # deal out the cards
+        self.deal()
+        # kick off the first turn
+        self.notifyPlayersOfTurnState()
+
+    def redeck(self):
+        if self.settings.deck_exhaust == "end_round" or len(self.discard.cards) == 0:
+            self.end(None)
+            # returning False here is how the caller (nextTurn()) knows that the game is over
+            return False
+        elif self.settings.deck_exhaust == "flip_discard":
+
+            # take the discard pile, reverse it ("flipping it"), and set it as the new deck
+            self.deck.cards = self.discard.cards
+            self.deck.cards.reverse()
+            self.discard.cards = []
+
+            # reassign new IDs to the cards in the deck, to obscure the order of the cards
+            for card in self.deck.cards:
+                card.id = uuid4().hex
+
+            # send the new card IDs to the client
+            for client in self.players:
+                client.connection.sendEvent(RedeckEvent(
+                    [card.id for card in self.deck.cards]))
+            return True
+        elif self.settings.deck_exhaust == "shuffle_discard":
+
+            # take the discard pile, shuffle it, and set it as the new deck
+            self.deck.cards = self.discard.cards
+            shuffle(self.deck.cards)
+            self.discard.cards = []
+
+            # reassign new IDs to the cards in the deck, to obscure the order of the cards
+            for card in self.deck.cards:
+                card.id = uuid4().hex
+
+            # send the new card IDs to the client
+            for client in self.players:
+                client.connection.sendEvent(RedeckEvent(
+                    [card.id for card in self.deck.cards]))
+            return True
+
+    def end(self, winnerID: Optional[str]):
+        # TODO: if settings.lay_at_end is enabled, automatically all possible cards to minimize hand scores
+        event = EndEvent(winnerID, {
+            player.connection.id: sum(funlib.scoreValue(card, self.settings) for card in player.hand.cards) for player in self.players
+        } | {
+            player.profile.id: sum(funlib.scoreValue(card, self.settings) for card in player.hand.cards) for player in self.aiPlayers
+        })
+        for client in self.players:
+            client.connection.sendEvent(event)
+
+        # deleting the games entry stops player actions from being processed as game actions
+        del games[self.lobby]
+
+        # sending a lobby event updates clients on what players are still in the lobby for the next round
+        if self.lobby in lobby.lobbies:
+            lobby.lobbies[self.lobby].informPlayersOfLobby()
+
+    def checkGameOver(self):
+        winner = None
+        for player in self.players:
+            if len(player.hand.cards) == 0:
+                winner = player
+                break
+        if winner is not None:
+            self.end(winner.connection.id)
+            return True
+        for player in self.aiPlayers:
+            if len(player.hand.cards) == 0:
+                winner = player
+                break
+        if winner is not None:
+            self.end(winner.profile.id)
+            return True
+        return False
+
+    def nextTurn(self):
+
+        # count how many human players are still connected
+        connectedPlayers = 0
+        for player in self.players:
+            if player.connection.id in lobby.connections:
+                connectedPlayers += 1
+
+        # if there are no human players left, or if there are less than two active (connected or AI) players, end the round
+        if connectedPlayers == 0 or connectedPlayers + len(self.aiPlayers) < 2:
+            self.end(None)
+            return
+
+        # if the deck is exhausted, flip or resuffle the deck according to the game settings
+        if len(self.deck.cards) == 0:
+            if not self.redeck():
+                return
+
+        # increment the turn counter, wrapping around at the end (once we've gone through all AI and human players)
+        self.turn_player = (self.turn_player +
+                            1) % (len(self.players) + len(self.aiPlayers))
+
+        # set game state to the beginning of a turn
+        self.turn_has_drawn = False
+        self.non_discardable_card = None
+
+        # send a message to all clients notifying them of the current turn state
+        self.notifyPlayersOfTurnState()
+
+        # turns start with players, then AI, so low self.turn_player indicates a player turn
+        if (self.turn_player < len(self.players)):
+            # a human player needs to take a turn
+            if not self.players[self.turn_player].connection.id in lobby.connections:
+                # skip this player if they have disconnected
+                self.players[self.turn_player].skipTurn(self)
+        else:
+            # an AI player needs to take a turn
+            self.aiPlayers[self.turn_player - len(self.players)].takeTurn(self)
+
+    def removePlayer(self, playerID: str):
+        # the player is still in the game, but no longer in the lobby (disconnected)
+        # if they were currently playing a turn, skip to the next player
+        if (self.turn_player < len(self.players)):
+            if (self.players[self.turn_player].connection.id == playerID):
+                self.players[self.turn_player].skipTurn(self)
+
+    def assertCurrentTurn(self, connection: 'lobby.Connection'):
+        assert self.turn_player < len(
+            self.players) and self.players[self.turn_player].connection is connection

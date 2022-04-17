@@ -4,6 +4,10 @@
 	background-size: 115%;
 }
 
+.card[data-suit="joker"]:before {
+	background-image: url("1J.svg");
+}
+
 .card[data-suit="spades"][data-rank="A"]:before {
 	background-image: url("AS.svg");
 }

@@ -3,7 +3,9 @@ from typing import Literal, Mapping, Optional, Protocol, Sequence, Type, Union
 
 from typing_extensions import Self
 
-JSONSafe = Union[Mapping[str, "JSONSafe"], Sequence["JSONSafe"], str, int, float, bool, None]
+JSONSafe = Union[Mapping[str, "JSONSafe"],
+                 Sequence["JSONSafe"], str, int, float, bool, None]
+
 
 class Encodable(Protocol):
     def encodeObject(self) -> JSONSafe:
@@ -11,6 +13,7 @@ class Encodable(Protocol):
 
     def encodeString(self) -> str:
         return json.dumps(self.encodeObject())
+
 
 class Decodable(Protocol):
     @classmethod
@@ -21,8 +24,97 @@ class Decodable(Protocol):
     def decodeString(cls, data: str) -> Self:
         return cls.decodeObject(json.loads(data))
 
-CardSuit = Literal["hearts", "diamonds", "spades", "clubs"]
-CardRank = Literal["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"]
+
+class GameSettings(Encodable, Decodable):
+
+    # deck_count, hand_size, first_turn, allow_draw_choice, allow_run_mixed_suit, limit_meld_size, ace_rank, deck_exhaust, require_end_discard, lay_at_end
+    def __init__(self,
+                 deck_count: int = 1,
+                 enable_jokers: bool = False,
+                 hand_size: int = 7,
+                 first_turn: Literal["next_player",
+                                     "prev_winner", "random"] = "next_player",
+                 allow_draw_choice: bool = False,
+                 allow_run_mixed_suit: bool = False,
+                 limit_meld_size: Optional[Literal[3, 4]] = None,
+                 ace_rank: Literal["low", "high"] = "low",
+                 deck_exhaust: Literal["flip_discard",
+                                       "shuffle_discard", "end_round"] = "flip_discard",
+                 require_end_discard: bool = False,
+                 lay_at_end: bool = True):
+        self.deck_count = deck_count
+        self.enable_jokers = enable_jokers
+        self.hand_size = hand_size
+        self.first_turn = first_turn
+        self.allow_draw_choice = allow_draw_choice
+        self.allow_run_mixed_suit = allow_run_mixed_suit
+        self.limit_meld_size = limit_meld_size
+        self.ace_rank = ace_rank
+        self.deck_exhaust = deck_exhaust
+        self.require_end_discard = require_end_discard
+        self.lay_at_end = lay_at_end
+
+    def encodeObject(self) -> JSONSafe:
+        return {
+            "deck_count": self.deck_count,
+            "enable_jokers": self.enable_jokers,
+            "hand_size": self.hand_size,
+            "first_turn": self.first_turn,
+            "allow_draw_choice": self.allow_draw_choice,
+            "allow_run_mixed_suit": self.allow_run_mixed_suit,
+            "limit_meld_size": self.limit_meld_size,
+            "ace_rank": self.ace_rank,
+            "deck_exhaust": self.deck_exhaust,
+            "require_end_discard": self.require_end_discard,
+            "lay_at_end": self.lay_at_end
+        }
+
+    @classmethod
+    def decodeObject(cls, data: JSONSafe) -> Self:
+        assert isinstance(data, dict)
+        assert "deck_count" in data
+        assert "enable_jokers" in data
+        assert "hand_size" in data
+        assert "first_turn" in data
+        assert "allow_draw_choice" in data
+        assert "allow_run_mixed_suit" in data
+        assert "limit_meld_size" in data
+        assert "ace_rank" in data
+        assert "deck_exhaust" in data
+        assert "require_end_discard" in data
+        assert "lay_at_end" in data
+        assert isinstance(data["deck_count"], int)
+        assert isinstance(data["enable_jokers"], bool)
+        assert isinstance(data["hand_size"], int)
+        assert data["first_turn"] in ["next_player", "prev_winner", "random"]
+        assert isinstance(data["allow_draw_choice"], bool)
+        assert isinstance(data["allow_run_mixed_suit"], bool)
+        assert data["limit_meld_size"] in [
+            3, 4] or data["limit_meld_size"] is None
+        assert data["ace_rank"] in ["low", "high"]
+        assert data["deck_exhaust"] in [
+            "flip_discard", "shuffle_discard", "end_round"]
+        assert isinstance(data["require_end_discard"], bool)
+        assert isinstance(data["lay_at_end"], bool)
+        return cls(
+            deck_count=data["deck_count"],
+            enable_jokers=data["enable_jokers"],
+            hand_size=data["hand_size"],
+            first_turn=data["first_turn"],
+            allow_draw_choice=data["allow_draw_choice"],
+            allow_run_mixed_suit=data["allow_run_mixed_suit"],
+            limit_meld_size=data["limit_meld_size"],
+            ace_rank=data["ace_rank"],
+            deck_exhaust=data["deck_exhaust"],
+            require_end_discard=data["require_end_discard"],
+            lay_at_end=data["lay_at_end"]
+        )
+
+
+CardSuit = Literal["hearts", "diamonds", "spades", "clubs", "joker"]
+CardRank = Literal["A", "2", "3", "4", "5",
+                   "6", "7", "8", "9", "10", "J", "Q", "K", "W"]
+
 
 class CardFace(Encodable):
     def __init__(self, suit: CardSuit, rank: CardRank):
@@ -35,6 +127,7 @@ class CardFace(Encodable):
             "rank": self.rank
         }
 
+
 class ClientCard(Encodable):
     def __init__(self, id: str, face: Optional[CardFace] = None):
         self.id = id
@@ -46,7 +139,9 @@ class ClientCard(Encodable):
             "face": self.face.encodeObject() if self.face else None
         }
 
+
 ClientStack = list[ClientCard]
+
 
 class ClientPlayer(Encodable):
     """
@@ -78,6 +173,7 @@ class ClientPlayer(Encodable):
             "human": self.human
         }
 
+
 class TurnState(Encodable):
     def __init__(self, player_id: str, state: Literal["draw", "play"]):
         self.player_id = player_id
@@ -89,6 +185,7 @@ class TurnState(Encodable):
             "state": self.state
         }
 
+
 class LobbyPlayer(Encodable):
     """
     Properties:
@@ -96,6 +193,7 @@ class LobbyPlayer(Encodable):
         id (str): A randomized string uniquely identifying the player.
         human (bool): Whether the player is human.
     """
+
     def __init__(self, name: str, id: str, human: bool):
         """
         Args:
@@ -114,6 +212,7 @@ class LobbyPlayer(Encodable):
             "human": self.human
         }
 
+
 class ClientLobby(Encodable):
     """
     A lobby of players.
@@ -123,7 +222,8 @@ class ClientLobby(Encodable):
         current_player_id (str): The player ID string of the current user.
         code (str): The code to join the current game.
     """
-    def __init__(self, players: list[LobbyPlayer], current_player_id: str, code: str):
+
+    def __init__(self, players: list[LobbyPlayer], current_player_id: str, code: str, settings: GameSettings):
         """
         A lobby of players.
 
@@ -135,16 +235,16 @@ class ClientLobby(Encodable):
         self.players = players
         self.current_player_id = current_player_id
         self.code = code
-        self.players = players
-        self.current_player_id = current_player_id
-        self.code = code
+        self.settings = settings
 
     def encodeObject(self) -> JSONSafe:
         return {
             "players": [player.encodeObject() for player in self.players],
             "current_player_id": self.current_player_id,
-            "code": self.code
+            "code": self.code,
+            "settings": self.settings.encodeObject()
         }
+
 
 class ClientBoard(Encodable):
     """
@@ -157,6 +257,7 @@ class ClientBoard(Encodable):
         discard (ClientStack): The stack of face-up cards that have been discarded. The last card to be discarded is the first item in the array.
         game_code (str): A code that other players may use to join the game before it starts.
     """
+
     def __init__(self, players: list[ClientPlayer], current_player_id: str, turn: Optional[TurnState], melds: list[ClientStack], deck: ClientStack, discard: ClientStack, game_code: str):
         """
         Args:
@@ -187,6 +288,21 @@ class ClientBoard(Encodable):
             "game_code": self.game_code
         }
 
+
+class PingEvent(Encodable):
+    """
+    A ping recieved from the server. Client should immediately respond with a pong action.
+    """
+
+    def __init__(self):
+        """
+        A ping recieved from the server. Client should immediately respond with a pong action.
+        """
+
+    def encodeObject(self) -> JSONSafe:
+        return {"type": "ping"}
+
+
 class LobbyEvent(Encodable):
     """
     A message received from the server that updates the state of the lobby.
@@ -194,6 +310,7 @@ class LobbyEvent(Encodable):
     Properties:
         lobby (ClientLobby): The lobby state.
     """
+
     def __init__(self, lobby: ClientLobby):
         """
         A message received from the server that updates the state of the lobby.
@@ -206,6 +323,7 @@ class LobbyEvent(Encodable):
     def encodeObject(self) -> JSONSafe:
         return {"type": "lobby", "lobby": self.lobby.encodeObject()}
 
+
 class StartEvent(Encodable):
     """
     Resets the game to a default state where all players have empty hands, there is no meld, and the deck is shuffled.
@@ -215,8 +333,10 @@ class StartEvent(Encodable):
         current_player_id (str): The player ID string of the current user.
         card_ids (list[str]): A list of face-down card IDs to include in the deck. The order matches the shuffled state of the deck.
         game_code (str): A code that other players may use to join the game before it starts.
+        settings (GameSettings): The current game settings.
     """
-    def __init__(self, players: list[ClientPlayer], current_player_id: str, card_ids: list[str], game_code: str):
+
+    def __init__(self, players: list[ClientPlayer], current_player_id: str, card_ids: list[str], game_code: str, settings: GameSettings):
         """
         Resets the game to a default state where all players have empty hands, there is no meld, and the deck is shuffled.
 
@@ -225,11 +345,13 @@ class StartEvent(Encodable):
             current_player_id (str): The player ID string of the current user.
             card_ids (list[str]): A list of face-down card IDs to include in the deck. The order matches the shuffled state of the deck.
             game_code (str): A code that other players may use to join the game before it starts.
+            settings (GameSettings): The current game settings.
         """
         self.players = players
         self.current_player_id = current_player_id
         self.card_ids = card_ids
         self.game_code = game_code
+        self.settings = settings
 
     def encodeObject(self) -> JSONSafe:
         return {
@@ -237,8 +359,10 @@ class StartEvent(Encodable):
             "players": [player.encodeObject() for player in self.players],
             "current_player_id": self.current_player_id,
             "card_ids": self.card_ids,
-            "game_code": self.game_code
+            "game_code": self.game_code,
+            "settings": self.settings.encodeObject()
         }
+
 
 class TurnEvent(Encodable):
     """
@@ -250,6 +374,7 @@ class TurnEvent(Encodable):
             `"draw"`: The player must draw a card either from the discard pile or the deck.
             `"play"`: The player can try to create or lay on melds as they see fit, and then they must discard a card.
     """
+
     def __init__(self, player_id: str, state: Literal["draw", "play"]):
         """
         Updates the current turn state of the game.
@@ -268,12 +393,14 @@ class TurnEvent(Encodable):
     def encodeObject(self) -> JSONSafe:
         return {"type": "turn", "player_id": self.player_id, "state": self.state}
 
+
 class MoveDestinationPlayer(Encodable):
     """
     Properties:
         player_id (str): The player ID of the player to move the cards to.
         position (int): The position in the player's hand to move the cards to. `0` represents the card all the way to the left in the hand.
     """
+
     def __init__(self, player_id: str, position: int):
         """
         Args:
@@ -290,12 +417,14 @@ class MoveDestinationPlayer(Encodable):
             "position": self.position
         }
 
+
 class MoveDestinationMeld(Encodable):
     """
     Properties:
         meld_number (int): The number of the meld to move the cards to. `0` represents the first meld that was laid down.
         position (int): The position in the meld to move the cards to. `0` represents the card all the way to the left in the meld.
     """
+
     def __init__(self, meld_number: int, position: int):
         """
         Args:
@@ -312,11 +441,13 @@ class MoveDestinationMeld(Encodable):
             "position": self.position
         }
 
+
 class MoveDesinationDiscard(Encodable):
     def encodeObject(self) -> JSONSafe:
         return {
             "type": "discard"
         }
+
 
 class MoveEvent(Encodable):
     """
@@ -326,6 +457,7 @@ class MoveEvent(Encodable):
         cards (list[ClientCard]): The cards that are moved. `face` being present indicates that this card is face up (and should be revealed if necessary).
         destination (Union[MoveDestinationPlayer, MoveDestinationMeld, MoveDestinationDiscard]): The final destination of the cards. The client will animate the cards moving from their current position to the new position.
     """
+
     def __init__(self, cards: list[ClientCard], destination: Union[MoveDestinationPlayer, MoveDestinationMeld, MoveDesinationDiscard]):
         """
         Indicates that a card has been moved, either by the current player or by someone else. `card.face` being present indicates that the card is face-up.
@@ -344,6 +476,7 @@ class MoveEvent(Encodable):
             "destination": self.destination.encodeObject()
         }
 
+
 class RedeckEvent(Encodable):
     """
     Indicates that the deck has been replenished from the discard pile.
@@ -353,6 +486,7 @@ class RedeckEvent(Encodable):
     Properties:
         new_card_ids (list[str]): The server should generate a new list of card IDs to use for the new deck.
     """
+
     def __init__(self, new_card_ids: list[str]):
         """
         Indicates that the deck has been replenished from the discard pile.
@@ -367,6 +501,7 @@ class RedeckEvent(Encodable):
     def encodeObject(self) -> JSONSafe:
         return {"type": "redeck", "new_card_ids": self.new_card_ids}
 
+
 class EndEvent(Encodable):
     """
     Indicates that the game has ended. The values of the remaining hands are tallied for scorekeeping. The client keeps track of score.
@@ -375,7 +510,8 @@ class EndEvent(Encodable):
         winner_id (str): The player ID of the winner.
         hand_values (dict[str, int]): A map (keyed by player ID) showing the hand values of the losing players. These point values will be added to the winner's score. "Rummy" should already be accounted for.
     """
-    def __init__(self, winner_id: str, hand_values: dict[str, int]):
+
+    def __init__(self, winner_id: Optional[str], hand_values: dict[str, int]):
         """
         Indicates that the game has ended. The values of the remaining hands are tallied for scorekeeping. The client keeps track of score.
 
@@ -394,10 +530,12 @@ class EndEvent(Encodable):
         }
 
 
-Event = Union[LobbyEvent, StartEvent, TurnEvent, MoveEvent, RedeckEvent, EndEvent]
+Event = Union[PingEvent, LobbyEvent, StartEvent,
+              TurnEvent, MoveEvent, RedeckEvent, EndEvent]
 """
 A message recieved from the server.
 
+`"ping"`: A ping recieved from the server. The client should respond immediately with a pong action.
 `"lobby"`: Update the state of the lobby.
 `"start"`: Resets the game to a default state where all players have empty hands, there is no meld, and the deck is shuffled.
 `"turn"`: Update the current turn state of the game.
@@ -405,6 +543,22 @@ A message recieved from the server.
 `"redeck"`: Indicates that the deck has been replenished from the discard pile.
 `"end"`: Indicates that the game has ended. The values of the remaining hands are tallied for scorekeeping.
 """
+
+
+class PongAction(Decodable):
+    """
+    A pong recieved from the client. Indicates that the connection is still active.
+    """
+
+    def __init__(self):
+        """
+        A pong recieved from the client. Indicates that the connection is still active.
+        """
+
+    @classmethod
+    def decodeObject(cls, data: JSONSafe) -> Self:
+        return PongAction()
+
 
 class NameAction(Decodable):
     """
@@ -415,6 +569,7 @@ class NameAction(Decodable):
     Properties:
         name (str): The name of the player.
     """
+
     def __init__(self, name: str):
         """
         Sets the name of the current player.
@@ -432,6 +587,7 @@ class NameAction(Decodable):
         assert isinstance(data["name"], str)
         return NameAction(name=data["name"])
 
+
 class AIAction(Decodable):
     """
     Add or remove an AI player.
@@ -442,6 +598,7 @@ class AIAction(Decodable):
     Properties:
         action (Literal["add", "remove"]): The action to perform.
     """
+
     def __init__(self, action: Literal["add", "remove"]):
         """
         Add or remove an AI player.
@@ -460,6 +617,7 @@ class AIAction(Decodable):
         assert data["action"] in ["add", "remove"]
         return AIAction(action=data["action"])
 
+
 class JoinAction(Decodable):
     """
     Joins a game. A game is left when the websocket connection is closed.
@@ -469,6 +627,7 @@ class JoinAction(Decodable):
     Properties:
         code (str): The game code to join.
     """
+
     def __init__(self, code: str):
         """
         Joins a game. A game is left when the websocket connection is closed.
@@ -486,6 +645,7 @@ class JoinAction(Decodable):
         assert isinstance(data["code"], str)
         return JoinAction(data["code"])
 
+
 class StartAction(Decodable):
     """
     Starts the current game.
@@ -496,6 +656,7 @@ class StartAction(Decodable):
     def decodeObject(cls, data: JSONSafe) -> Self:
         return StartAction()
 
+
 class DrawAction(Decodable):
     """
     Draws a card from the deck or the discard pile.
@@ -505,6 +666,7 @@ class DrawAction(Decodable):
     Properties:
         card_id (str): The ID of the card to draw. This can be the top card of the deck or the top card of the discard pile.
     """
+
     def __init__(self, card_id: str):
         """
         Draws a card from the deck or the discard pile.
@@ -522,6 +684,7 @@ class DrawAction(Decodable):
         assert isinstance(data["card_id"], str)
         return DrawAction(data["card_id"])
 
+
 class MeldAction(Decodable):
     """
     Lay down some cards to create a meld.
@@ -531,6 +694,7 @@ class MeldAction(Decodable):
     Properties:
         card_ids (list[str]): A list of card IDs to lay down.
     """
+
     def __init__(self, card_ids: list[str]):
         """
         Lay down some cards to create a meld.
@@ -547,7 +711,8 @@ class MeldAction(Decodable):
         assert isinstance(data, dict)
         assert isinstance(data["card_ids"], list)
         assert all(isinstance(card_id, str) for card_id in data["card_ids"])
-        return MeldAction(data["card_ids"]) #type: ignore
+        return MeldAction(data["card_ids"])  # type: ignore
+
 
 class LayAction(Decodable):
     """
@@ -556,28 +721,32 @@ class LayAction(Decodable):
     The server should verify that the card is in the player's hand, and that the card forms a valid meld.
 
     Properties:
-        card_id (str): The ID of the card to lay.
+        card_ids (list[str]): The IDs of the cards to lay.
         meld_number (int): The index of the meld to add the card to.
     """
-    def __init__(self, card_id: str, meld_number: int):
+
+    def __init__(self, card_ids: str, meld_number: int):
         """
         Lay down a card to add to an existing meld.
 
         The server should verify that the card is in the player's hand, and that the card forms a valid meld.
 
         Args:
-            card_id (str): The ID of the card to lay.
+            card_ids (list[str]): The IDs of the cards to lay.
             meld_number (int): The index of the meld to add the card to.
         """
-        self.card_id = card_id
+        self.card_ids = card_ids
         self.meld_number = meld_number
 
     @classmethod
     def decodeObject(cls, data: JSONSafe) -> Self:
         assert isinstance(data, dict)
-        assert isinstance(data["card_id"], str)
         assert isinstance(data["meld_number"], int)
-        return LayAction(data["card_id"], data["meld_number"])
+        assert isinstance(data["card_ids"], list)
+        assert len(data["card_ids"]) > 0
+        assert all(isinstance(card_id, str) for card_id in data["card_ids"])
+        return LayAction(data["card_ids"], data["meld_number"])  # type: ignore
+
 
 class DiscardAction(Decodable):
     """
@@ -588,6 +757,7 @@ class DiscardAction(Decodable):
     Properties:
         card_id (str): The ID of the card to discard.
     """
+
     def __init__(self, card_id: str):
         """
         Discard a card. This ends the player's turn.
@@ -605,12 +775,43 @@ class DiscardAction(Decodable):
         assert isinstance(data["card_id"], str)
         return DiscardAction(data["card_id"])
 
-Action = Union[NameAction, AIAction, JoinAction, StartAction, DrawAction, MeldAction, LayAction, DiscardAction]
+
+class SettingsAction(Decodable):
+    """
+    Change the current game settings.
+
+    The server should verify that the settings are valid and that the game has not started.
+
+    Properties:
+        settings (GameSettings): The new settings.
+    """
+
+    def __init__(self, settings: GameSettings):
+        """
+        Change the current game settings.
+
+        The server should verify that the settings are valid and that the game has not started.
+
+        Args:
+            settings (GameSettings): The new settings.
+        """
+        self.settings = settings
+
+    @classmethod
+    def decodeObject(cls, data: JSONSafe) -> Self:
+        assert isinstance(data, dict)
+        assert "settings" in data
+        return SettingsAction(GameSettings.decodeObject(data["settings"]))
+
+
+Action = Union[PongAction, NameAction, AIAction, JoinAction, StartAction,
+               DrawAction, MeldAction, LayAction, DiscardAction]
 """
 A message sent to the server. Indicates an action that the client wishes to perform.
 
 The client does not assume any side-effects of these actions. The server must send events back to the client to indicate the result of the action.
 
+`"pong"`: A pong recieved from the client. Indicates that the connection is still active.
 `"name"`: Sets the name of the current player.
 `"ai"`: Add or remove an AI player.
 `"join"`: Joins a game.
@@ -619,11 +820,13 @@ The client does not assume any side-effects of these actions. The server must se
 `"meld"`: Lay down some cards to create a meld.
 `"lay"`: Lay down a card to add to an existing meld.
 `"discard"`: Discard a card.
+`"settings"`: Changes the current game settings.
 
 The server should verify the legality of every action taken by the client, including whether it is the player's turn, and that the player's turn state is appropriate.
 """
 
 actionTypeMap: dict[str, Type[Action]] = {
+    "pong": PongAction,
     "name": NameAction,
     "ai": AIAction,
     "join": JoinAction,
