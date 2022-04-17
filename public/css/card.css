@@ -242,7 +242,7 @@
 /* Interactivity                                                              */
 /******************************************************************************/
 
-.card:hover:is(.hover-up, .hover-down) {
+.card:hover:is(.hover-up, .hover-down), .card.selected {
 	--animation-duration: 0.1s;
 }
 

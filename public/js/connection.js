@@ -25,6 +25,8 @@ export function handleEvent(event) {
                 state: event.state
             }
             state.ui.selectingMeldToLay = false
+            if (event.state == "draw")
+                state.ui.lastDrawnCard = null
             ui.updateBoardState()
             break
         case "lobby":
@@ -70,7 +72,8 @@ let eventQueueTimer = null
 const eventDelays = {
     start: 1000,
     redeck: 600,
-    move: 600
+    move: 600,
+    end: 2000
 }
 function handleNextEvent() {
     eventQueueTimer = null

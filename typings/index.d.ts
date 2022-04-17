@@ -9,6 +9,7 @@ declare interface GameUIState {
     primaryAction?: "discard" | "meld" | "lay" | "cancel" | "none"
     nonDiscardableCard?: string
     selectingMeldToLay?: boolean
+    lastDrawnCard?: string
 }
 /**
  * A specifier for the position of a particular card. This is translated into CSS classes and variables.

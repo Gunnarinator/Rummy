@@ -24,6 +24,7 @@ export function handleCardClick(cardID) {
                     state.ui.nonDiscardableCard = cardID
                 else
                     state.ui.nonDiscardableCard = null
+                state.ui.lastDrawnCard = cardID
                 connection.sendAction({
                     type: "draw",
                     card_id: cardID
@@ -135,3 +136,84 @@ export function init() {
     })
     document.querySelector("#main-action-button").addEventListener("click", performPrimaryAction)
 }
+
+window.addEventListener("keydown", e => {
+    if (state.type !== "game") return
+    if (e.key == "Enter" || e.key == " " || e.key == "Tab" || e.key.includes("Arrow")) e.preventDefault()
+})
+window.addEventListener("keyup", e => {
+    if (state.type !== "game") return
+    if (e.key == "Enter" || e.key == " " || e.key == "Tab" || e.key.includes("Arrow")) e.preventDefault()
+    if (state.board.turn?.player_id != state.board.current_player_id) return
+    if (state.board.turn.state == "draw") {
+        switch (e.key) {
+            case "`":
+            case "1":
+            case "q":
+            case ",":
+            case " ":
+                if (state.board.deck.length == 0) break
+                handleCardClick(state.board.deck[state.board.deck.length - 1].id)
+                e.preventDefault()
+                break
+            case "0":
+            case "-":
+            case "=":
+            case "e":
+            case ".":
+            case "Tab":
+                if (state.board.discard.length == 0) break
+                handleCardClick(state.board.discard[state.board.discard.length - 1].id)
+                e.preventDefault()
+                break
+        }
+    } else {
+        switch (e.key) {
+            case "Enter":
+            case " ":
+                if (state.ui.primaryAction === "lay" || state.ui.primaryAction === "meld") {
+                    performPrimaryAction()
+                    e.preventDefault()
+                }
+                break
+            case "Escape":
+                if (state.ui.primaryAction != "cancel") {
+                    state.ui.selectedCardIDs.forEach(handleCardClick)
+                    break
+                }
+            case "Backspace":
+            case "Delete":
+                if (state.ui.primaryAction === "discard" || state.ui.primaryAction === "cancel") {
+                    performPrimaryAction()
+                    e.preventDefault()
+                }
+                break
+            case "`":
+                state.ui.selectedCardIDs.forEach(handleCardClick)
+                break
+            case "=":
+            case "-":
+                if (state.ui.lastDrawnCard)
+                    handleCardClick(state.ui.lastDrawnCard)
+                break
+            default:
+                if ("1234567890".includes(e.key)) {
+                    let index = "1234567890".indexOf(e.key)
+                    if (e.shiftKey) index += 10
+                    if (state.ui.selectingMeldToLay) {
+                        let availableMelds = rules.getMeldsForLay()
+                        if (index >= availableMelds.length) break
+                        let meld = state.board.melds[availableMelds[index]]
+                        handleCardClick(meld[0].id)
+                        e.preventDefault()
+                    } else {
+                        let playerHand = state.board.players.find(p => p.id == state.board.current_player_id).hand
+                        if (index >= playerHand.length) break
+                        handleCardClick(playerHand[index].id)
+                        e.preventDefault()
+                    }
+                }
+                break
+        }
+    }
+})
