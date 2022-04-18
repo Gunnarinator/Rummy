@@ -73,7 +73,7 @@ const eventDelays = {
     start: 1000,
     redeck: 600,
     move: 600,
-    end: 2000
+    end: 1000
 }
 function handleNextEvent() {
     eventQueueTimer = null
