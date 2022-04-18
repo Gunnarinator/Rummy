@@ -272,6 +272,12 @@ class Game:
             for client in self.players:
                 client.connection.sendEvent(RedeckEvent(
                     [card.id for card in self.deck.cards]))
+
+            # flip the top card to start the discard pile
+            discard = self.deck.top()
+            assert discard is not None
+            self.moveCardsToDiscard([discard], self.deck)
+
             return True
         elif self.settings.deck_exhaust == "shuffle_discard":
 
@@ -288,6 +294,12 @@ class Game:
             for client in self.players:
                 client.connection.sendEvent(RedeckEvent(
                     [card.id for card in self.deck.cards]))
+
+            # flip the top card to start the discard pile
+            discard = self.deck.top()
+            assert discard is not None
+            self.moveCardsToDiscard([discard], self.deck)
+
             return True
 
     def end(self, winnerID: Optional[str]):
