@@ -137,16 +137,21 @@ export function init() {
     document.querySelector("#main-action-button").addEventListener("click", performPrimaryAction)
 }
 
+// prevent the browser from doing it's own behavior when the user presses certain keys in-game
 window.addEventListener("keydown", e => {
     if (state.type !== "game") return
     if (e.key == "Enter" || e.key == " " || e.key == "Tab" || e.key.includes("Arrow")) e.preventDefault()
 })
+
 window.addEventListener("keyup", e => {
     if (state.type !== "game") return
     if (e.key == "Enter" || e.key == " " || e.key == "Tab" || e.key.includes("Arrow")) e.preventDefault()
     if (state.board.turn?.player_id != state.board.current_player_id) return
     if (state.board.turn.state == "draw") {
+        // waiting to draw a card
         switch (e.key) {
+
+            // draw from the deck
             case "`":
             case "1":
             case "q":
@@ -156,6 +161,8 @@ window.addEventListener("keyup", e => {
                 handleCardClick(state.board.deck[state.board.deck.length - 1].id)
                 e.preventDefault()
                 break
+
+            // draw from the discard pile
             case "0":
             case "-":
             case "=":
@@ -168,7 +175,10 @@ window.addEventListener("keyup", e => {
                 break
         }
     } else {
+        // time to make a play
         switch (e.key) {
+
+            // lay down selected cards
             case "Enter":
             case " ":
                 if (state.ui.primaryAction === "lay" || state.ui.primaryAction === "meld") {
@@ -176,11 +186,17 @@ window.addEventListener("keyup", e => {
                     e.preventDefault()
                 }
                 break
+
+            // cancel the option to select a meld to lay onto
+            // or deselect all cards
             case "Escape":
                 if (state.ui.primaryAction != "cancel") {
                     state.ui.selectedCardIDs.forEach(handleCardClick)
                     break
                 }
+
+            // discard the selected card
+            // or cancel the option to select a meld to lay onto
             case "Backspace":
             case "Delete":
                 if (state.ui.primaryAction === "discard" || state.ui.primaryAction === "cancel") {
@@ -188,14 +204,22 @@ window.addEventListener("keyup", e => {
                     e.preventDefault()
                 }
                 break
+
+            // deselect all cards
             case "`":
                 state.ui.selectedCardIDs.forEach(handleCardClick)
                 break
+
+            // select the card that was just drawn
             case "=":
             case "-":
                 if (state.ui.lastDrawnCard)
                     handleCardClick(state.ui.lastDrawnCard)
                 break
+
+            // select a card according to the number pressed (0 is 10)
+            // hold shift to add 10 to the index (so shift-2 selects card 12)
+            // also works for selecting which meld to lay onto (only counts eligible melds)
             default:
                 if ("1234567890".includes(e.key)) {
                     let index = "1234567890".indexOf(e.key)
