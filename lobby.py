@@ -123,8 +123,6 @@ def addConnection(sock: Server):
                     game.handleAction(action, connection)
                 except Exception:
                     print_exc()
-                    raise RuntimeError(
-                        "Error handling action {}".format(action))
         except Exception as e:
             print_exc()
             removeConnection(connection.id)
