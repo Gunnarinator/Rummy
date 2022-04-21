@@ -92,6 +92,11 @@ function handleNextEvent() {
  * @param {GameEvent} event
  */
 function queueEvent(event) {
+    if (event.type === "ping") {
+        // ping events are handled immediately
+        handleEvent(event)
+        return
+    }
     eventQueue.push(event)
     if (eventQueueTimer == null) {
         handleNextEvent()
