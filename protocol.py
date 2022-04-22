@@ -29,13 +29,14 @@ class GameSettings(Encodable, Decodable):
 
     # deck_count, hand_size, first_turn, allow_draw_choice, allow_run_mixed_suit, limit_meld_size, ace_rank, deck_exhaust, require_end_discard, lay_at_end
     def __init__(self,
-                 deck_count: int = 1,
-                 enable_jokers: bool = False,
+                 deck_count: int = 2,
+                 enable_jokers: bool = True,
                  hand_size: int = 7,
                  first_turn: Literal["next_player",
                                      "prev_winner", "random"] = "next_player",
                  allow_draw_choice: bool = False,
                  allow_run_mixed_suit: bool = False,
+                 allow_set_duplicate_suit: bool = True,
                  limit_meld_size: Optional[Literal[3, 4]] = None,
                  ace_rank: Literal["low", "high"] = "low",
                  deck_exhaust: Literal["flip_discard",
@@ -48,6 +49,7 @@ class GameSettings(Encodable, Decodable):
         self.first_turn = first_turn
         self.allow_draw_choice = allow_draw_choice
         self.allow_run_mixed_suit = allow_run_mixed_suit
+        self.allow_set_duplicate_suit = allow_set_duplicate_suit
         self.limit_meld_size = limit_meld_size
         self.ace_rank = ace_rank
         self.deck_exhaust = deck_exhaust
@@ -62,6 +64,7 @@ class GameSettings(Encodable, Decodable):
             "first_turn": self.first_turn,
             "allow_draw_choice": self.allow_draw_choice,
             "allow_run_mixed_suit": self.allow_run_mixed_suit,
+            "allow_set_duplicate_suit": self.allow_set_duplicate_suit,
             "limit_meld_size": self.limit_meld_size,
             "ace_rank": self.ace_rank,
             "deck_exhaust": self.deck_exhaust,
@@ -78,6 +81,7 @@ class GameSettings(Encodable, Decodable):
         assert "first_turn" in data
         assert "allow_draw_choice" in data
         assert "allow_run_mixed_suit" in data
+        assert "allow_set_duplicate_suit" in data
         assert "limit_meld_size" in data
         assert "ace_rank" in data
         assert "deck_exhaust" in data
@@ -89,6 +93,7 @@ class GameSettings(Encodable, Decodable):
         assert data["first_turn"] in ["next_player", "prev_winner", "random"]
         assert isinstance(data["allow_draw_choice"], bool)
         assert isinstance(data["allow_run_mixed_suit"], bool)
+        assert isinstance(data["allow_set_duplicate_suit"], bool)
         assert data["limit_meld_size"] in [
             3, 4] or data["limit_meld_size"] is None
         assert data["ace_rank"] in ["low", "high"]
@@ -103,6 +108,7 @@ class GameSettings(Encodable, Decodable):
             first_turn=data["first_turn"],
             allow_draw_choice=data["allow_draw_choice"],
             allow_run_mixed_suit=data["allow_run_mixed_suit"],
+            allow_set_duplicate_suit=data["allow_set_duplicate_suit"],
             limit_meld_size=data["limit_meld_size"],
             ace_rank=data["ace_rank"],
             deck_exhaust=data["deck_exhaust"],
@@ -805,7 +811,7 @@ class SettingsAction(Decodable):
 
 
 Action = Union[PongAction, NameAction, AIAction, JoinAction, StartAction,
-               DrawAction, MeldAction, LayAction, DiscardAction]
+               DrawAction, MeldAction, LayAction, DiscardAction, SettingsAction]
 """
 A message sent to the server. Indicates an action that the client wishes to perform.
 
@@ -834,5 +840,6 @@ actionTypeMap: dict[str, Type[Action]] = {
     "draw": DrawAction,
     "meld": MeldAction,
     "lay": LayAction,
-    "discard": DiscardAction
+    "discard": DiscardAction,
+    "settings": SettingsAction
 }

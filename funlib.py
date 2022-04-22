@@ -11,8 +11,8 @@ from protocol import CardFace, CardRank, GameSettings
 
 
 def sortStack(cards: list['classes.ServerCard'], settings: GameSettings):
-    cards.sort(key=lambda card: card.face.suit)
-    cards.sort(key=lambda card: rankValue(card, settings))
+    cards.sort(key=lambda card: card.sortingSuitPosition(settings))
+    cards.sort(key=lambda card: card.sortingRankPosition(settings))
     return cards
 
 
@@ -80,6 +80,10 @@ def findSets(cards: list['classes.ServerCard'], settings: GameSettings):
     availableWilds = len(wilds)
     for rank in buckets:
         bucket = sortStack(buckets[rank], settings)
+        if not settings.allow_set_duplicate_suit:
+            suits = []
+            bucket = [*filter(lambda card: (suits.append(card.face.suit) or True)
+                              if card.face.suit not in suits else False, bucket)]
         if len(bucket) >= 3:
             sets.append(bucket)
         # only add wilds to sets of 2 or more, since a lone card will be caught by findRun as a run of 3 with two wilds
@@ -237,7 +241,6 @@ def checkLegal(cards: list['classes.ServerCard'], settings: GameSettings):
 # unless the offending card is a joker.
 def checkSet(cards: list['classes.ServerCard'], settings: GameSettings):
     rank = None
-    suits = []
 
     # for each card, if it's a different number, return false
     for i in range(len(cards)):
@@ -248,13 +251,15 @@ def checkSet(cards: list['classes.ServerCard'], settings: GameSettings):
             elif rank != cards[i].face.rank:
                 return False
 
-    # for each card, if it's suit has been represented already, return false.
-    for i in range(len(cards)):
-        # if that suit has been done already, return false.
-        if(cards[i].face.suit in suits and not cards[i].face.suit == "joker"):
-            return False
-        else:
-            suits.append(cards[i].face.suit)
+    if not settings.allow_set_duplicate_suit:
+        suits = []
+        # for each card, if it's suit has been represented already, return false.
+        for i in range(len(cards)):
+            # if that suit has been done already, return false.
+            if(cards[i].face.suit in suits and not cards[i].face.suit == "joker"):
+                return False
+            else:
+                suits.append(cards[i].face.suit)
 
     # if we get this far, it's a set.
     return True

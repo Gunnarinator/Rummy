@@ -343,6 +343,7 @@ declare interface GameSettings {
     first_turn: "next_player" | "prev_winner" | "random"
     allow_draw_choice: boolean
     allow_run_mixed_suit: boolean
+    allow_set_duplicate_suit: boolean
     limit_meld_size: 3 | 4 | null
     ace_rank: "low" | "high"
     deck_exhaust: "flip_discard" | "shuffle_discard" | "end_round"

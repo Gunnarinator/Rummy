@@ -1,6 +1,7 @@
 import * as controls from "./controls.js"
 import { id, setState, state } from "./index.js"
 import * as rules from "./rules.js"
+import * as settings from "./settings.js"
 
 /**
  * @param {StartEvent} event
@@ -196,6 +197,7 @@ export function updateBoardState() {
 export function updateLobbyState() {
     if (state.type !== "lobby") return
     controls.updateControlsState()
+    settings.updateSettingsState()
     if (id("lobby").classList.contains("hidden")) id("lobby").classList.remove("hidden")
     if (!id("board").classList.contains("hidden")) id("board").classList.add("hidden")
     let lobby = state.lobby

@@ -1,6 +1,7 @@
 //@ts-check
 import * as connection from "./connection.js"
 import * as controls from "./controls.js"
+import * as settings from "./settings.js"
 
 /**
  * @typedef {{type: "loading", lobby?: never, board?: never, ui?: never, scores: Partial<Record<string, number>>} |
@@ -25,6 +26,7 @@ export const id = document.getElementById.bind(document)
 function init() {
 	controls.init()
 	connection.init()
+	settings.init()
 }
 
 if (document.readyState === "complete") {

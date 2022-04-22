@@ -68,8 +68,10 @@ function rankValue(card, settings) {
 function isValidSet(cards) {
     if (state.type !== "game") return false
     if (cards.length < 3) return false
+    let suits = new Set()
     let rank = cards.find(card => card.face.rank !== "W")?.face.rank ?? "W"
-    return cards.every(card => card.face.rank === "W" || card.face.rank === rank)
+    return cards.every(card => card.face.rank === "W" ||
+        (card.face.rank === rank && (!suits.has(card.face.suit) || state.board.settings.allow_set_duplicate_suit) && suits.add(card.face.suit)))
 }
 
 /**

@@ -73,7 +73,7 @@ class ServerCard:
 
 class Stack:
     def __init__(self, num_decks: int = 0, jokers: bool = False):
-        self.cards = funlib.newDeck(num_decks, jokers)
+        self.cards = funlib.newDeck(num_decks, 2 * num_decks if jokers else 0)
 
     @classmethod
     def of(cls, cards: list[ServerCard]):
@@ -177,6 +177,8 @@ class BoardAIPlayer():
         return len(hand.cards) == 0
 
     def takeTurn(self, game: 'Game'):
+        print(f"{self.profile.name}'s hand:")
+        funlib.printCards(self.hand.cards)
         # TODO: AI doesn't currently take into account how close it is to laying a card (only making a new meld) when drawing or discarding
         discardTop = game.discard.top()
         drawnFrom = game.deck
@@ -207,11 +209,12 @@ class BoardAIPlayer():
                 drawnFrom = game.discard
                 cannotDiscard = drawnCard
 
+        print("After drawing:")
+        funlib.printCards(self.hand.cards)
+
         # draw the chosen card
         game.moveCardsToAIHand(
             [drawnCard], drawnFrom, self, self.getDestinationHandPosition(drawnCard, game.settings))
-        print(f"{self.profile.name}'s hand:")
-        funlib.printCards(self.hand.cards)
 
         # find the next "best" meld to play
         # melds are prioritized that use fewer wilds
@@ -271,7 +274,6 @@ class Game:
         self.lobby = l.code
         self.settings = l.settings
         games[self.lobby] = self
-        # TODO: jokers are not currently supported
         self.deck = Stack(l.settings.deck_count, l.settings.enable_jokers)
         self.discard = Stack(0, False)
         self.players: list["BoardPlayer"] = [BoardPlayer(
