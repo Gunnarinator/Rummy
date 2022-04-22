@@ -75,6 +75,12 @@ class Stack:
     def __init__(self, num_decks: int = 0, jokers: bool = False):
         self.cards = funlib.newDeck(num_decks, jokers)
 
+    @classmethod
+    def of(cls, cards: list[ServerCard]):
+        stack = cls(0, False)
+        stack.cards = cards
+        return stack
+
     def top(self):
         return self.cards[-1] if len(self.cards) > 0 else None
 
@@ -145,13 +151,38 @@ class BoardAIPlayer():
     def makeForClient(self):
         return ClientPlayer(self.profile.name, self.profile.id, [card.makeForClient(False) for card in self.hand.cards], False)
 
+    def canEmptyHand(self, game: 'Game'):
+        hand = Stack.of(self.hand.cards.copy())
+        melds = [Stack.of(meld.cards.copy()) for meld in game.melds]
+        # find the next "best" meld to play
+        # melds are prioritized that use fewer wilds
+        meld = funlib.findNextMeld(hand.cards, game.settings, None)
+        while meld is not None:
+            hand.remove(meld)
+            melds.append(Stack.of(meld))
+            meld = funlib.findNextMeld(hand.cards, game.settings, None)
+
+        # after we've played all melds, we try to lay onto existing ones
+        # the "preferred" lay will start with runs, then sets
+        # wilds will be used if possible
+        cardToLay, meldIndex = funlib.findNextPreferredLay(
+            hand.cards, melds, game.settings, None)
+        while cardToLay is not None and meldIndex is not None and (not game.settings.require_end_discard or len(hand.cards) > 1):
+            newMeld = funlib.sortStack(
+                [hand.cards[cardToLay]] + melds[meldIndex].cards, game.settings)
+            hand.remove(newMeld)
+            melds[meldIndex].cards = newMeld
+            cardToLay, meldIndex = funlib.findNextPreferredLay(
+                hand.cards, melds, game.settings, None)
+        return len(hand.cards) == 0
+
     def takeTurn(self, game: 'Game'):
         # TODO: AI doesn't currently take into account how close it is to laying a card (only making a new meld) when drawing or discarding
         discardTop = game.discard.top()
         drawnFrom = game.deck
         drawnCard = game.deck.assertedTop()
         cannotDiscard: Optional[ServerCard] = None
-        if discardTop is not None:
+        if discardTop is not None and not self.canEmptyHand(game):
             # check if the discard pile's card is helpful to us
             print("Discard pile:")
             funlib.printCards([discardTop])
@@ -160,8 +191,17 @@ class BoardAIPlayer():
             # otherwise, if it forms a new meld with our cards plus a wild (indicating it pairs with our card), we also take it
             # if neither of these apply, we just draw from the deck
             # if we draw from the discard pile, we also need to remember that we're not allowed to discard it again
-            if (len(funlib.findMelds(self.hand.cards + [discardTop], game.settings)) > len(funlib.findMelds(self.hand.cards, game.settings))) or \
-                    (len(funlib.findMelds(self.hand.cards + [discardTop, ServerCard(CardFace("joker", "W"))], game.settings)) > len(funlib.findMelds(self.hand.cards + [ServerCard(CardFace("joker", "W"))], game.settings))):
+            meldsWithDiscard = len(funlib.findMelds(
+                self.hand.cards + [discardTop], game.settings, cannotDiscard))
+            meldsWithoutDiscard = len(funlib.findMelds(
+                self.hand.cards, game.settings, cannotDiscard))
+            doublesWithDiscard = len(funlib.findMelds(
+                self.hand.cards + [discardTop, ServerCard(CardFace("joker", "W"))], game.settings, cannotDiscard))
+            doublesWithoutDiscard = len(funlib.findMelds(
+                self.hand.cards + [ServerCard(CardFace("joker", "W"))], game.settings, cannotDiscard))
+            print(
+                f'Discard potential: \x1b[1m{meldsWithDiscard}\x1b[0m > {meldsWithoutDiscard} or \x1b[1m{doublesWithDiscard}\x1b[0m > {doublesWithoutDiscard}')
+            if meldsWithDiscard > meldsWithoutDiscard or doublesWithDiscard > doublesWithoutDiscard:
                 print("Drawing from discard pile")
                 drawnCard = discardTop
                 drawnFrom = game.discard
@@ -175,23 +215,25 @@ class BoardAIPlayer():
 
         # find the next "best" meld to play
         # melds are prioritized that use fewer wilds
-        meld = funlib.findNextMeld(self.hand.cards, game.settings)
+        meld = funlib.findNextMeld(
+            self.hand.cards, game.settings, cannotDiscard)
         while meld is not None:
             game.moveCardsToMeld(meld, self.hand, len(game.melds), 0)
-            meld = funlib.findNextMeld(self.hand.cards, game.settings)
+            meld = funlib.findNextMeld(
+                self.hand.cards, game.settings, cannotDiscard)
 
         # after we've played all melds, we try to lay onto existing ones
         # the "preferred" lay will start with runs, then sets
         # wilds will be used if possible
         cardToLay, meldIndex = funlib.findNextPreferredLay(
-            self.hand.cards, game.melds, game.settings)
+            self.hand.cards, game.melds, game.settings, cannotDiscard)
         while cardToLay is not None and meldIndex is not None and (not game.settings.require_end_discard or len(self.hand.cards) > 1):
             newMeld = funlib.sortStack(
                 [self.hand.cards[cardToLay]] + game.melds[meldIndex].cards, game.settings)
             game.moveCardsToMeld(newMeld, self.hand,
                                  meldIndex, 0)
             cardToLay, meldIndex = funlib.findNextPreferredLay(
-                self.hand.cards, game.melds, game.settings)
+                self.hand.cards, game.melds, game.settings, cannotDiscard)
 
         # if our hand is empty, the game is over
         if game.checkGameOver():
@@ -209,7 +251,7 @@ class BoardAIPlayer():
             ranks[card.id] = 0
         # each card is "ranked" by how many times it appears in a meld if we were to add a wild to our hand
         # more melds means it's more likely that we'll want to keep that card
-        for meld in funlib.findMelds(self.hand.cards + [ServerCard(CardFace("joker", "W"))], game.settings):
+        for meld in funlib.findMelds(self.hand.cards + [ServerCard(CardFace("joker", "W"))], game.settings, None):
             for card in meld:
                 if card.id in ranks:
                     ranks[card.id] = ranks[card.id] + 1

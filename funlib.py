@@ -1,6 +1,7 @@
 from copy import copy
 from functools import reduce
 from random import shuffle
+from typing import Optional
 from uuid import uuid4
 
 import classes
@@ -106,12 +107,14 @@ def findLays(card: 'classes.ServerCard', melds: list['classes.Stack'], settings:
     return indexes
 
 
-def findNextPreferredLay(cards: list['classes.ServerCard'], melds: list['classes.Stack'], settings: GameSettings):
+def findNextPreferredLay(cards: list['classes.ServerCard'], melds: list['classes.Stack'], settings: GameSettings, cannotDiscard: Optional['classes.ServerCard']):
     if len(melds) == 0:
         return None, None
 
     # first look for runs that don't involve jokers
     for i in range(len(cards)):
+        if cards[i] is cannotDiscard:
+            continue
         if cards[i].face.suit == "joker":
             continue
         lays = findLays(cards[i], melds, settings, True)
@@ -120,6 +123,8 @@ def findNextPreferredLay(cards: list['classes.ServerCard'], melds: list['classes
 
     # if there are no runs, find sets that don't involve jokers
     for i in range(len(cards)):
+        if cards[i] is cannotDiscard:
+            continue
         if cards[i].face.suit == "joker":
             continue
         lays = findLays(cards[i], melds, settings, False)
@@ -128,6 +133,8 @@ def findNextPreferredLay(cards: list['classes.ServerCard'], melds: list['classes
 
     # if there are no sets or runs without jokers, find runs that involve jokers
     for i in range(len(cards)):
+        if cards[i] is cannotDiscard:
+            continue
         if cards[i].face.suit != "joker":
             continue
         lays = findLays(cards[i], melds, settings, True)
@@ -136,6 +143,8 @@ def findNextPreferredLay(cards: list['classes.ServerCard'], melds: list['classes
 
     # finally, find sets that involve jokers
     for i in range(len(cards)):
+        if cards[i] is cannotDiscard:
+            continue
         if cards[i].face.suit != "joker":
             continue
         lays = findLays(cards[i], melds, settings, False)
@@ -154,12 +163,14 @@ def canWinWith(meld: list['classes.ServerCard'], totalCards: int, settings: Game
     return len(meld) >= winLength and (not settings.require_end_discard or len(meld) > 3 or winLength == 3)
 
 
-def findMelds(cards: list['classes.ServerCard'], settings: GameSettings):
+def findMelds(cards: list['classes.ServerCard'], settings: GameSettings, cannotDiscard: Optional['classes.ServerCard']):
     maxLength = len(cards) - 1 if settings.require_end_discard else len(cards)
     melds = findRuns(cards, settings) + findSets(cards, settings)
-    melds = [*filter(lambda meld: (nonWildCards(meld) >= 2 or canWinWith(meld,
-                     len(cards), settings)) and len(meld) <= maxLength, melds)]
-
+    melds = [*filter(lambda meld:
+                     (nonWildCards(meld) >= 2 or canWinWith(
+                         meld, len(cards), settings))
+                     and len(meld) <= maxLength and
+                     (len(meld) < len(cards) - 1 or cannotDiscard is None or cannotDiscard in meld), melds)]
     # least important, sort by least number of wild cards
     melds.sort(key=lambda meld: len(meld) - nonWildCards(meld))
     # most important, sort by highest number of non-wild cards
@@ -168,8 +179,8 @@ def findMelds(cards: list['classes.ServerCard'], settings: GameSettings):
     return melds
 
 
-def findNextMeld(cards: list['classes.ServerCard'], settings: GameSettings):
-    melds = findMelds(cards, settings)
+def findNextMeld(cards: list['classes.ServerCard'], settings: GameSettings, cannotDiscard: Optional['classes.ServerCard']):
+    melds = findMelds(cards, settings, cannotDiscard)
     print("Current melds:")
     for meld in melds:
         printCards(meld)
