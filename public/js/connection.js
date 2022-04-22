@@ -1,4 +1,4 @@
-import { id, state } from "./index.js"
+import { id, setState, state } from "./index.js"
 import * as ui from "./ui.js"
 
 /**
@@ -109,7 +109,16 @@ let ws = null
 export function init() {
     ws = new WebSocket(`${location.protocol.replace("http", "ws")}//${location.host}/stream`)
     ws.onmessage = d => queueEvent(JSON.parse(d.data))
-    ws.onclose = () => ws = null
+    ws.onclose = () => {
+        ws = null
+        setState({
+            type: "loading",
+            scores: {}
+        })
+        id("board").classList.add("hidden")
+        id("lobby").classList.add("hidden")
+        setTimeout(() => location = location, 1000)
+    }
     ws.onerror = console.error
 }
 
