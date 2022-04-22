@@ -1,3 +1,5 @@
+from copy import copy
+from functools import reduce
 from random import shuffle
 from uuid import uuid4
 
@@ -11,6 +13,169 @@ def sortStack(cards: list['classes.ServerCard'], settings: GameSettings):
     cards.sort(key=lambda card: card.face.suit)
     cards.sort(key=lambda card: rankValue(card, settings))
     return cards
+
+
+def printCards(cards: list['classes.ServerCard']):
+    print(" - " + " ".join([{
+        "joker": "\x1b[1;34m",
+        "hearts": "\x1b[1;31m",
+        "diamonds": "\x1b[1;31m",
+        "spades": "\x1b[1m",
+        "clubs": "\x1b[1m",
+    }[card.face.suit] + card.face.rank + {
+        "joker": "✦",
+        "hearts": "♥",
+        "diamonds": "♦",
+        "spades": "♠",
+        "clubs": "♣",
+    }[card.face.suit] + "\x1b[0m" for card in cards]))
+
+
+def findRuns(cards: list['classes.ServerCard'], settings: GameSettings):
+    nonWilds = [card for card in cards if card.face.rank != "W"]
+    wilds = [card for card in cards if card.face.rank == "W"]
+    buckets = {}
+    for card in nonWilds:
+        suit = "*" if settings.allow_run_mixed_suit else card.face.suit
+        if suit not in buckets:
+            buckets[suit] = []
+        buckets[suit].append(card)
+    runs: list[list['classes.ServerCard']] = []
+    for suit in buckets:
+        bucket = buckets[suit]
+        bucket.sort(key=lambda card: rankValue(card, settings))
+        if len(bucket) >= 3:
+            for i in range(len(bucket)):
+                run = [bucket[i]]
+                availableWilds = len(wilds)
+                for j in range(i + 1, len(bucket)):
+                    if rankValue(bucket[j], settings) == rankValue(run[-1], settings):
+                        continue
+                    if rankValue(bucket[j], settings) > rankValue(run[-1], settings) and \
+                            rankValue(bucket[j], settings) - rankValue(run[-1], settings) - 1 <= availableWilds:
+                        for k in range(rankValue(bucket[j], settings) - rankValue(run[-1], settings) - 1):
+                            run.append(wilds[-availableWilds])
+                            availableWilds -= 1
+                        run.append(bucket[j])
+                    else:
+                        break
+                if len(run) + availableWilds >= 3:
+                    for j in range(3 - len(run)):
+                        run.append(wilds[-availableWilds])
+                        availableWilds -= 1
+                    runs.append(sortStack(run, settings))
+    return runs
+
+
+def findSets(cards: list['classes.ServerCard'], settings: GameSettings):
+    nonWilds = [card for card in cards if card.face.rank != "W"]
+    wilds = [card for card in cards if card.face.rank == "W"]
+    buckets = {}
+    for card in nonWilds:
+        if card.face.rank not in buckets:
+            buckets[card.face.rank] = []
+        buckets[card.face.rank].append(card)
+    sets: list[list['classes.ServerCard']] = []
+    availableWilds = len(wilds)
+    for rank in buckets:
+        bucket = sortStack(buckets[rank], settings)
+        if len(bucket) >= 3:
+            sets.append(bucket)
+        # only add wilds to sets of 2 or more, since a lone card will be caught by findRun as a run of 3 with two wilds
+        # this isn't strictly necessary, but it prevents duplicate melds being found
+        if availableWilds > 0 and len(bucket) >= 2 and len(bucket) + availableWilds >= 3:
+            if len(bucket) < 3 and len(bucket) + availableWilds > 3:
+                sets.append(
+                    sortStack(bucket + wilds[:3 - len(bucket)], settings))
+            sets.append(sortStack(bucket + wilds, settings))
+    if availableWilds >= 3:
+        sets.append(wilds)
+    return sets
+
+
+def findLays(card: 'classes.ServerCard', melds: list['classes.Stack'], settings: GameSettings, runsOnly: bool):
+    indexes: list[int] = []
+    for i in range(len(melds)):
+        meld = melds[i]
+        if card.face.rank == "W":
+            indexes.append(i)
+            continue
+        if checkLegal(meld.cards + [card], settings) and (not runsOnly or checkRun(meld.cards + [card], settings)):
+            indexes.append(i)
+            continue
+    return indexes
+
+
+def findNextPreferredLay(cards: list['classes.ServerCard'], melds: list['classes.Stack'], settings: GameSettings):
+    if len(melds) == 0:
+        return None, None
+
+    # first look for runs that don't involve jokers
+    for i in range(len(cards)):
+        if cards[i].face.suit == "joker":
+            continue
+        lays = findLays(cards[i], melds, settings, True)
+        if len(lays) > 0:
+            return i, lays[0]
+
+    # if there are no runs, find sets that don't involve jokers
+    for i in range(len(cards)):
+        if cards[i].face.suit == "joker":
+            continue
+        lays = findLays(cards[i], melds, settings, False)
+        if len(lays) > 0:
+            return i, lays[0]
+
+    # if there are no sets or runs without jokers, find runs that involve jokers
+    for i in range(len(cards)):
+        if cards[i].face.suit != "joker":
+            continue
+        lays = findLays(cards[i], melds, settings, True)
+        if len(lays) > 0:
+            return i, lays[0]
+
+    # finally, find sets that involve jokers
+    for i in range(len(cards)):
+        if cards[i].face.suit != "joker":
+            continue
+        lays = findLays(cards[i], melds, settings, False)
+        if len(lays) > 0:
+            return i, lays[0]
+
+    return None, None
+
+
+def nonWildCards(cards: list['classes.ServerCard']):
+    return len([card for card in cards if card.face.rank != "W"])
+
+
+def canWinWith(meld: list['classes.ServerCard'], totalCards: int, settings: GameSettings):
+    winLength = totalCards - 1
+    return len(meld) >= winLength and (not settings.require_end_discard or len(meld) > 3 or winLength == 3)
+
+
+def findMelds(cards: list['classes.ServerCard'], settings: GameSettings):
+    maxLength = len(cards) - 1 if settings.require_end_discard else len(cards)
+    melds = findRuns(cards, settings) + findSets(cards, settings)
+    melds = [*filter(lambda meld: (nonWildCards(meld) >= 2 or canWinWith(meld,
+                     len(cards), settings)) and len(meld) <= maxLength, melds)]
+
+    # least important, sort by least number of wild cards
+    melds.sort(key=lambda meld: len(meld) - nonWildCards(meld))
+    # most important, sort by highest number of non-wild cards
+    melds.sort(key=lambda meld: -nonWildCards(meld))
+    # naturally, the least important of all will be to sort runs before sets (since they're assigned that way)
+    return melds
+
+
+def findNextMeld(cards: list['classes.ServerCard'], settings: GameSettings):
+    melds = findMelds(cards, settings)
+    print("Current melds:")
+    for meld in melds:
+        printCards(meld)
+    if len(melds) == 0:
+        return None
+    return melds[0]
 
 
 def newDeck(decks: int = 1, jokers: int = 0):

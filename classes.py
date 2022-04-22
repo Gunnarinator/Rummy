@@ -146,12 +146,82 @@ class BoardAIPlayer():
         return ClientPlayer(self.profile.name, self.profile.id, [card.makeForClient(False) for card in self.hand.cards], False)
 
     def takeTurn(self, game: 'Game'):
-        # TODO: AI
-        card = game.deck.assertedTop()
+        # TODO: AI doesn't currently take into account how close it is to laying a card (only making a new meld) when drawing or discarding
+        discardTop = game.discard.top()
+        drawnFrom = game.deck
+        drawnCard = game.deck.assertedTop()
+        cannotDiscard: Optional[ServerCard] = None
+        if discardTop is not None:
+            # check if the discard pile's card is helpful to us
+            print("Discard pile:")
+            funlib.printCards([discardTop])
+
+            # if the discard pile forms a new meld with our cards, we take it
+            # otherwise, if it forms a new meld with our cards plus a wild (indicating it pairs with our card), we also take it
+            # if neither of these apply, we just draw from the deck
+            # if we draw from the discard pile, we also need to remember that we're not allowed to discard it again
+            if (len(funlib.findMelds(self.hand.cards + [discardTop], game.settings)) > len(funlib.findMelds(self.hand.cards, game.settings))) or \
+                    (len(funlib.findMelds(self.hand.cards + [discardTop, ServerCard(CardFace("joker", "W"))], game.settings)) > len(funlib.findMelds(self.hand.cards + [ServerCard(CardFace("joker", "W"))], game.settings))):
+                print("Drawing from discard pile")
+                drawnCard = discardTop
+                drawnFrom = game.discard
+                cannotDiscard = drawnCard
+
+        # draw the chosen card
         game.moveCardsToAIHand(
-            [card], game.deck, self, self.getDestinationHandPosition(card, game.settings))
-        game.moveCardsToDiscard([card], self.hand)
-        game.nextTurn()
+            [drawnCard], drawnFrom, self, self.getDestinationHandPosition(drawnCard, game.settings))
+        print(f"{self.profile.name}'s hand:")
+        funlib.printCards(self.hand.cards)
+
+        # find the next "best" meld to play
+        # melds are prioritized that use fewer wilds
+        meld = funlib.findNextMeld(self.hand.cards, game.settings)
+        while meld is not None:
+            game.moveCardsToMeld(meld, self.hand, len(game.melds), 0)
+            meld = funlib.findNextMeld(self.hand.cards, game.settings)
+
+        # after we've played all melds, we try to lay onto existing ones
+        # the "preferred" lay will start with runs, then sets
+        # wilds will be used if possible
+        cardToLay, meldIndex = funlib.findNextPreferredLay(
+            self.hand.cards, game.melds, game.settings)
+        while cardToLay is not None and meldIndex is not None and (not game.settings.require_end_discard or len(self.hand.cards) > 1):
+            newMeld = funlib.sortStack(
+                [self.hand.cards[cardToLay]] + game.melds[meldIndex].cards, game.settings)
+            game.moveCardsToMeld(newMeld, self.hand,
+                                 meldIndex, 0)
+            cardToLay, meldIndex = funlib.findNextPreferredLay(
+                self.hand.cards, game.melds, game.settings)
+
+        # if our hand is empty, the game is over
+        if game.checkGameOver():
+            return
+
+        # choose which card to discard
+        discardRank = [
+            *filter(lambda c: c is not cannotDiscard, self.hand.cards)]  # filter out the card we cannot discard
+        # first we sort by rank (highest rank first)
+        # this will act as a tiebreaker for the next sort
+        discardRank.sort(key=lambda x: -funlib.rankValue(x, game.settings))
+
+        ranks: dict[str, int] = {}
+        for card in discardRank:
+            ranks[card.id] = 0
+        # each card is "ranked" by how many times it appears in a meld if we were to add a wild to our hand
+        # more melds means it's more likely that we'll want to keep that card
+        for meld in funlib.findMelds(self.hand.cards + [ServerCard(CardFace("joker", "W"))], game.settings):
+            for card in meld:
+                if card.id in ranks:
+                    ranks[card.id] = ranks[card.id] + 1
+        discardRank.sort(key=lambda x: ranks[x.id])
+
+        print("Discard ranking:")
+        funlib.printCards(discardRank)
+
+        # discard the chosen card and advance the game
+        game.moveCardsToDiscard([discardRank[0]], self.hand)
+        if not game.checkGameOver():
+            game.nextTurn()
 
 
 class Game:
