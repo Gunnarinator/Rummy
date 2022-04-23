@@ -36,7 +36,7 @@ class GameSettings(Encodable, Decodable):
                                      "prev_winner", "random"] = "next_player",
                  allow_draw_choice: bool = False,
                  allow_run_mixed_suit: bool = False,
-                 allow_set_duplicate_suit: bool = True,
+                 allow_set_duplicate_suit: bool = False,
                  limit_meld_size: Optional[Literal[3, 4]] = None,
                  ace_rank: Literal["low", "high"] = "low",
                  deck_exhaust: Literal["flip_discard",
