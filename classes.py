@@ -201,6 +201,16 @@ class BoardAIPlayer():
                 self.hand.cards + [discardTop, ServerCard(CardFace("joker", "W"))], game.settings, cannotDiscard))
             doublesWithoutDiscard = len(funlib.findMelds(
                 self.hand.cards + [ServerCard(CardFace("joker", "W"))], game.settings, cannotDiscard))
+
+            # if the settings disallow sets with duplicate suits and we already have this card, only draw if it forms multiple new melds
+            discardDeficit = len(
+                [discardTop.face.suit == card.face.suit and discardTop.face.rank == card.face.rank for card in self.hand.cards])
+            if not game.settings.allow_set_duplicate_suit and discardDeficit > 0:
+                print(
+                    f"Saw a card we already have, decrementing discard potential by ${discardDeficit}")
+                meldsWithDiscard -= discardDeficit
+                doublesWithDiscard -= discardDeficit
+
             print(
                 f'Discard potential: \x1b[1m{meldsWithDiscard}\x1b[0m > {meldsWithoutDiscard} or \x1b[1m{doublesWithDiscard}\x1b[0m > {doublesWithoutDiscard}')
             if meldsWithDiscard > meldsWithoutDiscard or doublesWithDiscard > doublesWithoutDiscard:
