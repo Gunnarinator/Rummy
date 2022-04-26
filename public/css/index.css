@@ -65,7 +65,7 @@ body {
 	background-color: purple;
 }
 .Brown{
-	background-color: Brown;
+	background-color: rgb(125, 85, 53);
 }
 .Black{
 	background-color: black;
@@ -73,6 +73,11 @@ body {
 .Gray{
 	background-color: gray;
 }
+
+.Yellow{
+	background-color: rgb(173, 165, 4);
+}
+
 
 
 #lobby {
