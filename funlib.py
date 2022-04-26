@@ -117,7 +117,7 @@ def findNextPreferredLay(cards: list['classes.ServerCard'], melds: list['classes
 
     # first look for runs that don't involve jokers
     for i in range(len(cards)):
-        if cards[i] is cannotDiscard:
+        if len(cards) == 2 and cards[(i + 1) % 2] is cannotDiscard:
             continue
         if cards[i].face.suit == "joker":
             continue
@@ -127,7 +127,7 @@ def findNextPreferredLay(cards: list['classes.ServerCard'], melds: list['classes
 
     # if there are no runs, find sets that don't involve jokers
     for i in range(len(cards)):
-        if cards[i] is cannotDiscard:
+        if len(cards) == 2 and cards[(i + 1) % 2] is cannotDiscard:
             continue
         if cards[i].face.suit == "joker":
             continue
@@ -135,9 +135,15 @@ def findNextPreferredLay(cards: list['classes.ServerCard'], melds: list['classes
         if len(lays) > 0:
             return i, lays[0]
 
+    nonWilds = [card for card in cards if card.face.suit != "joker"]
+
+    # don't lay wilds unnecessarily
+    if len(nonWilds) > 1 or (len(nonWilds) == 1 and nonWilds[0] is cannotDiscard):
+        return None, None
+
     # if there are no sets or runs without jokers, find runs that involve jokers
     for i in range(len(cards)):
-        if cards[i] is cannotDiscard:
+        if len(cards) == 2 and cards[(i + 1) % 2] is cannotDiscard:
             continue
         if cards[i].face.suit != "joker":
             continue
@@ -147,7 +153,7 @@ def findNextPreferredLay(cards: list['classes.ServerCard'], melds: list['classes
 
     # finally, find sets that involve jokers
     for i in range(len(cards)):
-        if cards[i] is cannotDiscard:
+        if len(cards) == 2 and cards[(i + 1) % 2] is cannotDiscard:
             continue
         if cards[i].face.suit != "joker":
             continue
