@@ -1,9 +1,9 @@
-import lobby as l
+import net
 from classes import *
 from protocol import *
 
 
-def handleAction(action: Action, connection: 'l.Connection'):
+def handleAction(action: Action, connection: 'net.Connection'):
     print("Player " + connection.id +
           " (" + connection.name + "): " + str(action) + " action")
     lobby = connection.lobby
@@ -45,8 +45,8 @@ def handleAction(action: Action, connection: 'l.Connection'):
         # The server should verify that the game is not already running, and that thare are less than 4 players in the game.
         #  - code (str): The game code to join.
         assert game is None
-        if action.code in l.lobbies and not action.code in games and len(l.lobbies[action.code].connections) + len(l.lobbies[action.code].aiPlayers) < 4:
-            l.lobbies[action.code].addPlayer(connection)
+        if action.code in net.lobbies and not action.code in games and len(net.lobbies[action.code].connections) + len(net.lobbies[action.code].aiPlayers) < 4:
+            net.lobbies[action.code].addPlayer(connection)
 
     elif isinstance(action, StartAction):
 

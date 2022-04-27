@@ -1,7 +1,15 @@
+import sys
+
+sys.path.append("./server/")
+
 from flask import Flask, send_from_directory
 from flask_sock import Server, Sock
 
-import lobby
+import protocol
+import events
+import funlib
+import classes
+import net
 
 app = Flask(__name__)
 sock = Sock(app)
@@ -15,7 +23,7 @@ def public(path):
 
 @sock.route('/stream')
 def socket(sock: Server):
-    lobby.addConnection(sock)
+    net.addConnection(sock)
 
 
 if __name__ == '__main__':

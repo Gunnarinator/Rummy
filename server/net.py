@@ -3,10 +3,12 @@ from traceback import print_exc
 from uuid import uuid4
 
 from flask_sock import Server
-
-import game
 from names import generateName
+
+import events
 from protocol import *
+
+connections: dict[str, 'Connection'] = {}
 
 
 class Connection:
@@ -32,9 +34,6 @@ class Connection:
                 pass
 
 
-connections: dict[str, Connection] = {}
-
-
 class AILobbyPlayer:
     def __init__(self):
         self.name = generateName()
@@ -57,7 +56,7 @@ class Lobby:
 
     def removePlayer(self, player: Connection):
         try:
-            g = game.games.get(player.lobby.code)
+            g = events.games.get(player.lobby.code)
             if g is not None:
                 g.removePlayer(player.id)
             self.connections.remove(player.id)
@@ -107,7 +106,6 @@ lobbies: dict[str, Lobby] = {}
 def addConnection(sock: Server):
     try:
         connection = Connection(sock)
-        connections[connection.id] = connection
         try:
             while True:
                 data: Union[str, bytes, None] = sock.receive(10)
@@ -120,10 +118,10 @@ def addConnection(sock: Server):
                     data = data.decode("utf-8")
                 action = parseAction(data)
                 try:
-                    game.handleAction(action, connection)
+                    events.handleAction(action, connection)
                 except Exception:
                     print_exc()
-        except Exception as e:
+        except Exception:
             print_exc()
             removeConnection(connection.id)
             try:
@@ -134,8 +132,8 @@ def addConnection(sock: Server):
         pass
     try:
         sock.close()
-    except Exception as e:
-        print(e)
+    except Exception:
+        print_exc()
 
 
 def removeConnection(id: str):

@@ -4,7 +4,7 @@ from typing import Union
 from uuid import uuid4
 
 import funlib
-import lobby
+import net
 from protocol import *
 
 # This file should contain all classes created by Super Rummy.
@@ -106,7 +106,7 @@ class Stack:
 
 
 class BoardPlayer():
-    def __init__(self, connection: 'lobby.Connection'):
+    def __init__(self, connection: 'net.Connection'):
         self.hand = Stack(0, False)
         self.connection = connection
 
@@ -138,7 +138,7 @@ class BoardPlayer():
 
 
 class BoardAIPlayer():
-    def __init__(self, lobbyPlayer: 'lobby.AILobbyPlayer'):
+    def __init__(self, lobbyPlayer: 'net.AILobbyPlayer'):
         self.hand = Stack(0, False)
         self.profile = lobbyPlayer
 
@@ -280,14 +280,14 @@ class BoardAIPlayer():
 
 
 class Game:
-    def __init__(self, l: 'lobby.Lobby'):
-        self.lobby = l.code
+    def __init__(self, l: 'net.Lobby'):
+        self.net = l.code
         self.settings = l.settings
-        games[self.lobby] = self
+        games[self.net] = self
         self.deck = Stack(l.settings.deck_count, l.settings.enable_jokers)
         self.discard = Stack(0, False)
         self.players: list["BoardPlayer"] = [BoardPlayer(
-            lobby.connections[player]) for player in l.connections]
+            net.connections[player]) for player in l.connections]
         self.aiPlayers = [BoardAIPlayer(player) for player in l.aiPlayers]
         self.melds: list[Stack] = []
         self.turn_player: int = 0  # TODO: respect settings.first_turn
@@ -369,7 +369,7 @@ class Game:
                 player.makeForClient(client is player) for player in self.players
             ] + [
                 player.makeForClient() for player in self.aiPlayers
-            ], client.connection.id, [card.id for card in self.deck.cards], self.lobby, self.settings))
+            ], client.connection.id, [card.id for card in self.deck.cards], self.net, self.settings))
 
         # deal out the cards
         self.deal()
@@ -437,11 +437,11 @@ class Game:
             client.connection.sendEvent(event)
 
         # deleting the games entry stops player actions from being processed as game actions
-        del games[self.lobby]
+        del games[self.net]
 
-        # sending a lobby event updates clients on what players are still in the lobby for the next round
-        if self.lobby in lobby.lobbies:
-            lobby.lobbies[self.lobby].informPlayersOfLobby()
+        # sending a net event updates clients on what players are still in the net for the next round
+        if self.net in net.lobbies:
+            net.lobbies[self.net].informPlayersOfLobby()
 
     def checkGameOver(self):
         winner = None
@@ -466,7 +466,7 @@ class Game:
         # count how many human players are still connected
         connectedPlayers = 0
         for player in self.players:
-            if player.connection.id in lobby.connections:
+            if player.connection.id in net.connections:
                 connectedPlayers += 1
 
         # if there are no human players left, or if there are less than two active (connected or AI) players, end the round
@@ -493,7 +493,7 @@ class Game:
         # turns start with players, then AI, so low self.turn_player indicates a player turn
         if (self.turn_player < len(self.players)):
             # a human player needs to take a turn
-            if not self.players[self.turn_player].connection.id in lobby.connections:
+            if not self.players[self.turn_player].connection.id in net.connections:
                 # skip this player if they have disconnected
                 self.players[self.turn_player].skipTurn(self)
         else:
@@ -501,12 +501,12 @@ class Game:
             self.aiPlayers[self.turn_player - len(self.players)].takeTurn(self)
 
     def removePlayer(self, playerID: str):
-        # the player is still in the game, but no longer in the lobby (disconnected)
+        # the player is still in the game, but no longer in the net (disconnected)
         # if they were currently playing a turn, skip to the next player
         if (self.turn_player < len(self.players)):
             if (self.players[self.turn_player].connection.id == playerID):
                 self.players[self.turn_player].skipTurn(self)
 
-    def assertCurrentTurn(self, connection: 'lobby.Connection'):
+    def assertCurrentTurn(self, connection: 'net.Connection'):
         assert self.turn_player < len(
             self.players) and self.players[self.turn_player].connection is connection

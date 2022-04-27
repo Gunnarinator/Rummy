@@ -8,5 +8,13 @@
 	"python.terminal.activateEnvInCurrentTerminal": true,
 	"editor.insertSpaces": true,
 	"editor.tabSize": 4,
-	"editor.stickyTabStops": true
+	"editor.stickyTabStops": true,
+	"python.formatting.autopep8Args": [
+		"--ignore",
+		"E402"
+	],
+	"python.sortImports.path": "true",
+	"python.analysis.extraPaths": [
+		"./server"
+	]
 }
