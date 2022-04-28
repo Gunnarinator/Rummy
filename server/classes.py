@@ -204,10 +204,10 @@ class BoardAIPlayer():
 
             # if the settings disallow sets with duplicate suits and we already have this card, only draw if it forms multiple new melds
             discardDeficit = len(
-                [discardTop.face.suit == card.face.suit and discardTop.face.rank == card.face.rank for card in self.hand.cards])
+                [*filter(lambda card: discardTop.face.suit == card.face.suit and discardTop.face.rank == card.face.rank, self.hand.cards)])
             if not game.settings.allow_set_duplicate_suit and discardDeficit > 0:
                 print(
-                    f"Saw a card we already have, decrementing discard potential by ${discardDeficit}")
+                    f"Saw a card we already have, decrementing discard potential by {discardDeficit}")
                 meldsWithDiscard -= discardDeficit
                 doublesWithDiscard -= discardDeficit
 
