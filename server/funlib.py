@@ -45,26 +45,25 @@ def findRuns(cards: list['classes.ServerCard'], settings: GameSettings):
     for suit in buckets:
         bucket = buckets[suit]
         bucket.sort(key=lambda card: rankValue(card, settings))
-        if len(bucket) >= 3:
-            for i in range(len(bucket)):
-                run = [bucket[i]]
-                availableWilds = len(wilds)
-                for j in range(i + 1, len(bucket)):
-                    if rankValue(bucket[j], settings) == rankValue(run[-1], settings):
-                        continue
-                    if rankValue(bucket[j], settings) > rankValue(run[-1], settings) and \
-                            rankValue(bucket[j], settings) - rankValue(run[-1], settings) - 1 <= availableWilds:
-                        for k in range(rankValue(bucket[j], settings) - rankValue(run[-1], settings) - 1):
-                            run.append(wilds[-availableWilds])
-                            availableWilds -= 1
-                        run.append(bucket[j])
-                    else:
-                        break
-                if len(run) + availableWilds >= 3:
-                    for j in range(3 - len(run)):
+        for i in range(len(bucket)):
+            run = [bucket[i]]
+            availableWilds = len(wilds)
+            for j in range(i + 1, len(bucket)):
+                if rankValue(bucket[j], settings) == rankValue(run[-1], settings):
+                    continue
+                if rankValue(bucket[j], settings) > rankValue(run[-1], settings) and \
+                        rankValue(bucket[j], settings) - rankValue(run[-1], settings) - 1 <= availableWilds:
+                    for k in range(rankValue(bucket[j], settings) - rankValue(run[-1], settings) - 1):
                         run.append(wilds[-availableWilds])
                         availableWilds -= 1
-                    runs.append(sortStack(run, settings))
+                    run.append(bucket[j])
+                else:
+                    break
+            if len(run) + availableWilds >= 3:
+                for j in range(3 - len(run)):
+                    run.append(wilds[-availableWilds])
+                    availableWilds -= 1
+                runs.append(sortStack(run, settings))
     return runs
 
 
@@ -76,9 +75,10 @@ def findSets(cards: list['classes.ServerCard'], settings: GameSettings):
         if card.face.rank not in buckets:
             buckets[card.face.rank] = []
         buckets[card.face.rank].append(card)
-    sets: list[list['classes.ServerCard']] = []
-    availableWilds = len(wilds)
+    sets: list[list['classes.ServerCard']] = [wilds[:i]
+                                              for i in range(3, len(wilds) + 1)]
     for rank in buckets:
+        availableWilds = len(wilds)
         bucket = sortStack(buckets[rank], settings)
         if not settings.allow_set_duplicate_suit:
             suits = []
@@ -93,8 +93,6 @@ def findSets(cards: list['classes.ServerCard'], settings: GameSettings):
                 sets.append(
                     sortStack(bucket + wilds[:3 - len(bucket)], settings))
             sets.append(sortStack(bucket + wilds, settings))
-    if availableWilds >= 3:
-        sets.append(wilds)
     return sets
 
 
@@ -170,7 +168,7 @@ def nonWildCards(cards: list['classes.ServerCard']):
 
 def canWinWith(meld: list['classes.ServerCard'], totalCards: int, settings: GameSettings):
     winLength = totalCards - 1
-    return len(meld) >= winLength and (not settings.require_end_discard or len(meld) > 3 or winLength == 3)
+    return len(meld) >= winLength and (not settings.require_end_discard or len(meld) <= totalCards - 1)
 
 
 def findMelds(cards: list['classes.ServerCard'], settings: GameSettings, cannotDiscard: Optional['classes.ServerCard']):
@@ -216,7 +214,7 @@ def newDeck(decks: int = 1, jokers: int = 0):
             for n in range(13):
                 rank: CardRank = ranks[n]
                 retval.append(classes.ServerCard(CardFace(suit, rank)))
-        id = deck*54 + 52
+        id = deck * 54 + 52
     for n in range(jokers):
         retval.append(classes.ServerCard(CardFace("joker", "W")))
     shuffle(retval)
@@ -258,6 +256,9 @@ def checkSet(cards: list['classes.ServerCard'], settings: GameSettings):
                 return False
 
     if not settings.allow_set_duplicate_suit:
+        if len(cards) > 4:
+            return False  # prevent using a wild as a 5th card
+
         suits = []
         # for each card, if it's suit has been represented already, return false.
         for i in range(len(cards)):
@@ -312,6 +313,9 @@ def scoreValue(card: 'classes.ServerCard', settings: GameSettings):
 
 
 def checkRun(cards: list['classes.ServerCard'], settings: GameSettings):
+    # prevent using a wild as a 14th card
+    if len(cards) > 13:
+        return False
     # filter out non-wild cards and sort by rank
     rankedCards = [card for card in cards if card.face.rank != "W"]
     rankedCards.sort(key=lambda card: rankValue(card, settings))
