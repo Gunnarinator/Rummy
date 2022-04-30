@@ -70,8 +70,9 @@ function isValidSet(cards) {
     if (cards.length < 3) return false
     let suits = new Set()
     let rank = cards.find(card => card.face.rank !== "W")?.face.rank ?? "W"
-    return cards.every(card => card.face.rank === "W" ||
-        (card.face.rank === rank && (!suits.has(card.face.suit) || state.board.settings.allow_set_duplicate_suit) && suits.add(card.face.suit)))
+    return (state.board.settings.allow_set_duplicate_suit || cards.length <= 4)
+        && cards.every(card => card.face.rank === "W" ||
+            (card.face.rank === rank && (!suits.has(card.face.suit) || state.board.settings.allow_set_duplicate_suit) && suits.add(card.face.suit)))
 }
 
 /**
@@ -80,8 +81,8 @@ function isValidSet(cards) {
  */
 function isValidRun(cards) {
     if (state.type !== "game") return false
-    if (cards.length < 3) return false
-    let rankedCards = [...cards] // filter out non-wild cards and sort by rank
+    if (cards.length < 3 || cards.length > 13) return false
+    let rankedCards = cards // filter out non-wild cards and sort by rank
         .filter(card => card.face.rank != "W")
         .sort((a, b) => rankValue(a, state.board.settings) - rankValue(b, state.board.settings))
     if (rankedCards.length === 0) return true // all wilds is a run
