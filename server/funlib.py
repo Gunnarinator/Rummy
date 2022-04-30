@@ -113,6 +113,9 @@ def findNextPreferredLay(cards: list['classes.ServerCard'], melds: list['classes
     if len(melds) == 0:
         return None, None
 
+    if settings.require_end_discard and len(cards) == 1:
+        return None, None
+
     # first look for runs that don't involve jokers
     for i in range(len(cards)):
         if len(cards) == 2 and cards[(i + 1) % 2] is cannotDiscard:

@@ -283,6 +283,82 @@ class TestAILogic(unittest.TestCase):
             c(["WJ", "WJ", "WJ", "WJ"])
         ])
 
+    def test_findLay_run(self: 'TestAILogic'):
+        cards = c(["2C", "8H", "3H", "4S"])
+        i, _ = findNextPreferredLay(cards,
+                                    [
+                                        Stack.of(c(["AS", "2S", "3S"]))
+                                    ], self.rules, None)
+        self.assertIsNotNone(i)
+        compare([cards[i]], c(["4S"]))  # type: ignore
+
+    def test_findLay_set(self: 'TestAILogic'):
+        cards = c(["2C", "8H", "3H", "4S"])
+        i, _ = findNextPreferredLay(cards,
+                                    [
+                                        Stack.of(c(["4C", "4H", "4D"]))
+                                    ], self.rules, None)
+        self.assertIsNotNone(i)
+        compare([cards[i]], c(["4S"]))  # type: ignore
+
+    def test_findLay_ignoreWild(self: 'TestAILogic'):
+        cards = c(["2C", "8H", "3H", "WJ"])
+        i, _ = findNextPreferredLay(cards,
+                                    [
+                                        Stack.of(c(["4C", "4H", "4D"]))
+                                    ], self.rules, None)
+        self.assertIsNone(i)
+
+    def test_findLay_wild_win(self: 'TestAILogic'):
+        cards = c(["3H", "WJ"])
+        i, _ = findNextPreferredLay(cards,
+                                    [
+                                        Stack.of(c(["4C", "4H", "4D"]))
+                                    ], self.rules, cards[1])
+        self.assertIsNotNone(i)
+        compare([cards[i]], c(["WJ"]))  # type: ignore
+
+    def test_findLay_wild_only(self: 'TestAILogic'):
+        cards = c(["WJ"])
+        i, _ = findNextPreferredLay(cards,
+                                    [
+                                        Stack.of(c(["4C", "4H", "4D"]))
+                                    ], self.rules, None)
+        self.assertIsNotNone(i)
+        compare([cards[i]], c(["WJ"]))  # type: ignore
+
+    def test_findLay_discardTrap(self: 'TestAILogic'):
+        cards = c(["3H", "4S"])
+        i, _ = findNextPreferredLay(cards,
+                                    [
+                                        Stack.of(c(["4C", "4H", "4D"]))
+                                    ], self.rules, cards[0])
+        self.assertIsNone(i)
+
+    def test_findLay_discardTrap_wild(self: 'TestAILogic'):
+        cards = c(["3H", "WJ"])
+        i, _ = findNextPreferredLay(cards,
+                                    [
+                                        Stack.of(c(["4C", "4H", "4D"]))
+                                    ], self.rules, cards[0])
+        self.assertIsNone(i)
+
+    def test_findLay_winTrap(self: 'TestAILogic'):
+        cards = c(["4S"])
+        i, _ = findNextPreferredLay(cards,
+                                    [
+                                        Stack.of(c(["4C", "4H", "4D"]))
+                                    ], self.discardReqiredRules, None)
+        self.assertIsNone(i)
+
+    def test_findLay_winTrap_wild(self: 'TestAILogic'):
+        cards = c(["WJ"])
+        i, _ = findNextPreferredLay(cards,
+                                    [
+                                        Stack.of(c(["4C", "4H", "4D"]))
+                                    ], self.discardReqiredRules, None)
+        self.assertIsNone(i)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
