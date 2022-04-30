@@ -30,10 +30,13 @@ export function handleEvent(event) {
             ui.updateBoardState()
             break
         case "lobby":
+            let updateName = state.type !== "lobby" ||
+                state.lobby.players.find(({ id }) => id === state.lobby.current_player_id).name !==
+                event.lobby.players.find(({ id }) => id === event.lobby.current_player_id).name
             state.type = "lobby"
             //@ts-ignore
             state.lobby = event.lobby
-            ui.updateLobbyState()
+            ui.updateLobbyState(updateName)
             break
         case "redeck":
             if (state.type !== "game") return

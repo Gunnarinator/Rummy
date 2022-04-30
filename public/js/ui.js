@@ -194,10 +194,13 @@ export function updateBoardState() {
     }
 }
 
-export function updateLobbyState() {
+/**
+ * @param {boolean} updateName
+ */
+export function updateLobbyState(updateName) {
     if (state.type !== "lobby") return
     controls.updateControlsState()
-    settings.updateSettingsState()
+    settings.updateSettingsState(updateName)
     if (id("lobby").classList.contains("hidden")) id("lobby").classList.remove("hidden")
     if (!id("board").classList.contains("hidden")) id("board").classList.add("hidden")
     let lobby = state.lobby

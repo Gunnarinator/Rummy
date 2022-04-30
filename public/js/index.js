@@ -20,7 +20,7 @@ export function setState(s) {
 	state = s
 }
 
-/** @type {(id: string) => HTMLDivElement | null} */
+/** @type {<S extends string>(id: S) => (S extends `${string}-button` ? HTMLButtonElement : S extends `${string}-field` ? HTMLInputElement : HTMLDivElement) | null} */
 export const id = document.getElementById.bind(document)
 
 function init() {

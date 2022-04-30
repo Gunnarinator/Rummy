@@ -226,10 +226,38 @@ export function init() {
         settingElement.appendChild(settingOptionsElement)
         settingsElement.appendChild(settingElement)
     }
+    id("name-field").addEventListener("input", () => {
+        let name = id("name-field").value
+        id("set-name-button").disabled =
+            state.type !== "lobby" ||
+            name.length > 20 ||
+            !name.match(/[^\W_]/) ||
+            state.lobby.players.some(p => p.name === name)
+    })
+    id("name-field").addEventListener("keydown", e => {
+        if (e.key === "Enter") {
+            id("set-name-button").click()
+        }
+    })
+    id("set-name-button").addEventListener("click", () => {
+        if (state.type !== "lobby" || id("set-name-button").disabled) return
+        connection.sendAction({
+            type: "name",
+            name: id("name-field").value
+        })
+    })
 }
 
-export function updateSettingsState() {
-    if (state.type !== "lobby" && state.type !== "game") return
+/**
+ * @param {boolean} updateName
+ */
+export function updateSettingsState(updateName) {
+    if (state.type !== "lobby") return
+    if (updateName) {
+        id("name-field").value = id("name-field").placeholder = state.lobby.players.find(({ id }) => id === state.lobby.current_player_id).name
+
+        id("set-name-button").disabled = true
+    }
     document.querySelectorAll("#game-settings .setting-option.selected").forEach(e => e.classList.remove("selected"))
     for (let [settingID, setting] of Object.entries(gameSettings)) {
         for (let option of setting.options) {
