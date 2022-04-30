@@ -43,6 +43,9 @@
 				<button id="lobby-primary" class="primary">Join Game</button>
 			</div>
 			<div id="settings">
+				<div class="settings-preview Red">
+					<div class="card face-down"></div>
+				</div>
 				<p>Name:</p>
 				<input id="name-field" placeholder="Display Name" autocapitalize="true" autocomplete="nickname">
 				<button id="set-name-button" class="primary" disabled>Set</button>
@@ -60,13 +63,12 @@
 				<button class="colorButton">Yellow</button>
 				<!--allows users to change the color of the background to those defined above, but not after game starts -->
 				<script>
-					let z = document.getElementsByTagName("BODY");
+					let z = document.querySelectorAll("body, .settings-preview");
 					let currentColor = "Red";
 					const colorButtons = [...document.querySelectorAll('.colorButton')];
 					document.addEventListener('click', e => {
 					if (!colorButtons.includes(e.target)) return;
-						console.log("here!");
-						z[0].classList.replace(currentColor,e.target.textContent);
+						z.forEach(x => x.classList.replace(currentColor,e.target.textContent));
 						currentColor = e.target.textContent;
 					});
 

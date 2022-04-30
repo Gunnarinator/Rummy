@@ -127,3 +127,15 @@ button:active:not(:disabled) {
 #settings p {
     margin-bottom: 0.5em;
 }
+
+.settings-preview {
+    float: right;
+    width: calc(var(--card-width) * 3);
+    height: calc(var(--card-height) * 3);
+    padding: calc(var(--card-height) * 1.5) calc(var(--card-width) * 1.5);
+	--card-width: 100px;
+	--card-height: 140px;
+	background-image: url("https://www.transparenttextures.com/patterns/45-degree-fabric-dark.png");
+    border-radius: 40px;
+    box-shadow: 0px 0px 10px 10px #000b inset;
+}
