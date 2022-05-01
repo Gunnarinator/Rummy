@@ -57,6 +57,10 @@ export function handleEvent(event) {
                 for (let score of Object.values(event.hand_values)) {
                     state.scores[event.winner_id] = (state.scores[event.winner_id] ?? 0) + score
                 }
+            } else {
+                for (let [id, score] of Object.entries(event.hand_values)) {
+                    state.scores[id] = (state.scores[id] ?? 0) - score
+                }
             }
             break
         default:
