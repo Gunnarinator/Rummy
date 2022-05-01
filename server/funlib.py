@@ -35,7 +35,7 @@ def printCards(cards: list['classes.ServerCard']):
 def findRuns(cards: list['classes.ServerCard'], settings: GameSettings):
     nonWilds = [card for card in cards if card.face.rank != "W"]
     wilds = [card for card in cards if card.face.rank == "W"]
-    buckets = {}
+    buckets: dict[str, list['classes.ServerCard']] = {}
     for card in nonWilds:
         suit = "*" if settings.allow_run_mixed_suit else card.face.suit
         if suit not in buckets:
@@ -176,6 +176,8 @@ def canWinWith(meld: list['classes.ServerCard'], totalCards: int, settings: Game
 
 def findMelds(cards: list['classes.ServerCard'], settings: GameSettings, cannotDiscard: Optional['classes.ServerCard']):
     maxLength = len(cards) - 1 if settings.require_end_discard else len(cards)
+    if settings.limit_meld_size is not None and maxLength > settings.limit_meld_size:
+        maxLength = settings.limit_meld_size
     melds = findRuns(cards, settings) + findSets(cards, settings)
     melds = [*filter(lambda meld:
                      (nonWildCards(meld) >= 2 or canWinWith(
