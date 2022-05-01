@@ -26,6 +26,7 @@ export function resetBoard(event) {
             selectedCardIDs: new Set()
         }
     })
+    settings.updateSettingsState()
     let boardElement = id("board")
     if (boardElement.classList.contains("hidden")) boardElement.classList.remove("hidden")
     if (!id("lobby").classList.contains("hidden")) id("lobby").classList.add("hidden")

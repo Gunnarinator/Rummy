@@ -95,6 +95,7 @@ body {
 	padding: 1rem;
 	z-index: 1000000000;
 	background-color: #000b;
+	color: white;
 }
 
 #board.hidden, #lobby.hidden {

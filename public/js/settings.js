@@ -207,7 +207,7 @@ export function init() {
         settingOptionsElement.classList.add("setting-options")
         for (let option of setting.options) {
             const optionElement = document.createElement("button")
-            optionElement.classList.add("setting-option")
+            optionElement.classList.add("setting-option", "restricted-setting")
             optionElement.textContent = option.label
             optionElement.addEventListener("click", () => {
                 if (state.type !== "lobby") return
@@ -251,8 +251,10 @@ export function init() {
 /**
  * @param {boolean} updateName
  */
-export function updateSettingsState(updateName) {
-    if (state.type !== "lobby") return
+export function updateSettingsState(updateName = id("set-name-button").disabled) {
+    let restrictedControls = document.querySelectorAll(/** @type {"button"} */(".restricted-setting"))
+    if (state.type !== "lobby") return restrictedControls.forEach(c => (c.disabled = true))
+    restrictedControls.forEach(c => (c.disabled = false))
     if (updateName) {
         id("name-field").value = id("name-field").placeholder = state.lobby.players.find(({ id }) => id === state.lobby.current_player_id).name
 

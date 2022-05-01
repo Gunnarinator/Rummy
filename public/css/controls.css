@@ -28,6 +28,10 @@ button, input {
 	color: black;
 }
 
+input {
+    -webkit-text-fill-color: black;
+}
+
 ::placeholder {
     color: rgba(0, 0, 0, 0.4);
 }
@@ -121,9 +125,6 @@ button:active:not(:disabled) {
     border-bottom-right-radius: 0;
 }
 
-#settings {
-    padding-top: 3em;
-}
 #settings p {
     margin-bottom: 0.5em;
 }
