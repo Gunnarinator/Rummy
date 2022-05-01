@@ -50,16 +50,16 @@ body {
 	background-color: #a80600;
 }
 .Blue{
-	background-color: blue;
+	background-color: darkblue;
 }
 .Green{
 	background-color: green;
 }
 .Orange{
-	background-color: orange;
+	background-color: darkorange;
 }
 .Pink{
-	background-color: pink;
+	background-color: hotpink;
 }
 .Purple{
 	background-color: purple;
@@ -68,14 +68,13 @@ body {
 	background-color: rgb(125, 85, 53);
 }
 .Black{
-	background-color: black;
+	background-color: #222;
 }
 .Gray{
 	background-color: gray;
 }
-
 .Yellow{
-	background-color: rgb(173, 165, 4);
+	background-color: #dd0;
 }
 
 
