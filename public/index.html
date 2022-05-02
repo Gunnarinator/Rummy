@@ -23,7 +23,7 @@
 		<link rel="stylesheet" href="css/index.css">
 		<link rel="stylesheet" href="css/card.css">
 		<link rel="stylesheet" href="css/controls.css">
-		<link rel="stylesheet" href="themes/front/minimal/front-minimal.css">
+		<link rel="stylesheet" href="themes/front/minimal/front-minimal.css" id = "front">
 		<link rel="stylesheet" href="themes/back/minimal/back-minimal.css">
 		<link rel="stylesheet" href="themes/back/minimal/Black.css" id="back">
 	</head>
@@ -95,9 +95,20 @@
 				let cardColor = e.target.textContent;
 				if (!cardButtons.includes(e.target)) return;
 					console.log(cardColor);
-					document.getElementById("back").href = "themes/back/minimal/" + cardColor + ".css";
+					document.getElementById("back").href = "themes/back/minimal/" + cardColor + ".css"; //alt front-minimal with diff colors
 				});
 			</script>
+			<p>Suit Color:</p>
+			<script>
+				function altSuits(){
+					document.getElementById("front").href = "themes/front/minimal/alt-front-minimal.css"
+				}
+				function defaultSuits(){
+					document.getElementById("front").href = "themes/front/minimal/front-minimal.css"
+				}
+			</script>
+			<button onclick="defaultSuits()">Defualt</button>
+			<button onclick="altSuits()">Alternative</button>
 			<h1>Game Settings</h1>
 			<p>Name:</p>
 			<input class="restricted-setting" id="name-field" placeholder="Display Name" autocapitalize="true" autocomplete="nickname">
